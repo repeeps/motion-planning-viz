@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13 · 차처럼 움직이기 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:grab;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--muted); min-width:110px;}
+  .ctl input[type=range]{flex:1; min-width:140px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 5 · 실전 · CH 13</div>
+    <h1>차처럼 움직이기 — 옆으로는 못 간다</h1>
+    <p class="intro">지금까지 로봇은 <b>어느 방향으로든 즉시</b> 움직일 수 있다고 가정했어요. 하지만 자동차는 달라요 — <b>바라보는 방향(앞뒤)으로만</b> 가고, <b>옆으로는 못 미끄러지며</b>, 핸들을 끝까지 꺾어도 <b>일정 반지름보다 더 작게는 못 돌아요</b>. 이런 "움직임의 제약"이 있으면 경로도 아무렇게나 못 그어요 — <b>직선과 최소반경 호(arc)를 이어 붙인</b> 모양이어야 하죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 차엔 방향이 있다</button>
+    <button data-s="1">01 · 최소 회전 반경</button>
+    <button data-s="2">02 · 옆으로 가려면 S자</button>
+    <button data-s="3">03 · 방향까지 계획한다</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — A Car Has Heading</span>
+    <h2>점 로봇 vs 자동차</h2>
+    <p class="lead">왼쪽 <span style="color:var(--q)">점 로봇</span>은 목표로 <b>곧장</b> 갈 수 있어요(어느 방향이든 OK). 오른쪽 <span style="color:var(--good)">자동차</span>는 <b>앞을 바라본 방향</b>으로만 나아가요 — 목표가 옆이나 뒤에 있으면 <b>곧장은 불가능</b>하고, 돌면서 다가가야 해요. <b>목표를 끌어</b> 옮기며 차이를 보세요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 차에는 위치(x,y)뿐 아니라 <b>방향(θ)</b>이라는 상태가 하나 더 있어요. 이게 모든 걸 바꿔요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Minimum Turning Radius</span>
+    <h2>핸들을 끝까지 꺾어도 — 이 원보다 작겐 못 돈다</h2>
+    <p class="lead">핸들을 최대로 꺾었을 때 차가 그리는 원이 <b>가장 작은 회전</b>이에요. 그 반지름이 <b>최소 회전 반경 R</b>. 차는 <b>왼쪽 원·오른쪽 원</b> 중 하나를 따라 돌거나 직진할 수 있어요(두 원 안쪽으론 절대 못 들어가요). 슬라이더로 R을 바꿔 두 원이 어떻게 변하는지 보세요.</p>
+    <div class="ctl"><label>최소 회전 반경 R</label><input type="range" id="R1" min="0.8" max="3" step="0.1" value="1.5"><span class="big" id="R1v" style="min-width:48px"></span></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ R이 작을수록 민첩(작은 차), 클수록 둔해요(트럭·버스). 좁은 데서 못 도는 이유죠.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Sideways Needs an S</span>
+    <h2>옆 차선으로 옮기려면 — 꺾었다 되꺾는다</h2>
+    <p class="lead">바로 <b>옆으로는</b> 못 가니, 차선을 바꾸려면 <b>한쪽으로 틀었다가 반대로 되틀어</b> 원래 방향을 회복해요(S자). <b>옆 이동량</b>을 조절하며 <b>출발</b>을 누르면, 차가 <b>두 개의 최소반경 호</b>로 부드럽게 차선을 바꾸는 게 보여요. 이게 직진+호를 이어붙인 <b>실제 자동차 경로</b>의 기본 조각이에요.</p>
+    <div class="ctl"><label>옆 이동량</label><input type="range" id="shift2" min="0.6" max="2.4" step="0.2" value="1.4"><span class="big" id="shift2v" style="min-width:48px"></span></div>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go2">🚗 차선 변경</button> <button class="btn" id="rst2">↺ 리셋</button></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ "직진–좌호–우호–직진"처럼 <b>최소반경 호와 직선만</b> 이어 붙이면 어떤 자세로도 갈 수 있어요(이런 경로를 Dubins/Reeds-Shepp 곡선이라 불러요).</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Plan the Heading Too</span>
+    <h2>(x, y) 가 아니라 (x, y, 방향)을 계획한다</h2>
+    <p class="lead">핵심은 — 차의 계획은 <b>위치만이 아니라 "도착했을 때 어느 쪽을 보고 있나(방향)"까지</b> 함께 풀어야 한다는 거예요. 그래서 탐색 공간이 평면(x,y)에서 <b>(x, y, θ)</b>로 한 차원 늘어요. 앞서 본 격자·샘플링 방법들도 이 <b>방향 차원을 포함</b>해서 돌리고, 이동은 <b>최소반경 호·직진</b>으로만 잇는 식으로 확장돼요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 지금까진 세상이 안 변한다고 봤어요. 그런데 사람·차가 <b>움직이고</b> 지도가 <b>바뀌면</b>? 다음 → <a href="14-replanning.html" style="color:var(--q);font-weight:700">CH 14 · 움직이는 장애물·리플래닝</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 회전 반경·곡선 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '13 · 차처럼');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt, clamp=VZ.clamp;
+function board(){ return S.board({W:440,H:300,s:44,ox:14,oy:150}); } // y 중앙 정렬: oy=150 → y범위 약 -3.0..3.4
+// 차 그리기: 위치 p, 방향 th(rad)
+function carSVG(b,p,th,c){ const L=0.5,W=0.28; const cs=Math.cos(th),sn=Math.sin(th);
+  const pts=[[L,0],[-L*0.7,W],[-L*0.7,-W]].map(([x,y])=>[p[0]+x*cs-y*sn, p[1]+x*sn+y*cs]);
+  return `<polygon points="${pts.map(q=>b.X(q[0])+','+b.Y(q[1])).join(' ')}" fill="${c}" stroke="#fff" stroke-width="1"/>`; }
+function arrow(b,p,th,c,len){ len=len||0.9; const e=[p[0]+Math.cos(th)*len,p[1]+Math.sin(th)*len];
+  return `<line x1="${b.X(p[0])}" y1="${b.Y(p[1])}" x2="${b.X(e[0])}" y2="${b.Y(e[1])}" stroke="${c}" stroke-width="2" marker-end=""/><circle cx="${b.X(e[0])}" cy="${b.Y(e[1])}" r="2.5" fill="${c}"/>`; }
+function pathSVG(b,pts,c,w,dash){ let d=''; pts.forEach((p,i)=>d+=(i?'L':'M')+b.X(p[0]).toFixed(1)+' '+b.Y(p[1]).toFixed(1)+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w||3}" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round" stroke-linecap="round"/>`; }
+
+// ===== STEP 0: holonomic vs car =====
+(function(){ const b=board(); let goal=[6.5,1.8]; const ROB=[2.0,0], CAR=[2.0,0]; // 같은 y기준, 좌우 두 패널은 한 보드에 나눠 그림
+  // 단일 보드, 왼쪽=점로봇 영역(x<5) 오른쪽=차(x>5)는 과하니 — 대신 한 장면에 둘 비교는 복잡. 두 보드로.
+  document.getElementById('s0').innerHTML='';
+})();
+// Step0를 두 개의 작은 보드로 구성
+(function(){ const host=document.getElementById('s0'); host.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div style="font:11px monospace;color:var(--muted);text-align:center;margin-bottom:3px">점 로봇 (어디든 직진)</div><div id="s0a"></div></div><div><div style="font:11px monospace;color:var(--muted);text-align:center;margin-bottom:3px">자동차 (앞으로만)</div><div id="s0b"></div></div></div>';
+  const bb=S.board({W:210,H:200,s:26,ox:10,oy:100}); // y중앙
+  let goal=[5.5,1.6]; const POS=[1.0,0], TH=0; // 차는 +x 방향
+  function render(){
+    // 점 로봇: 곧장 직선
+    let a=`<line x1="${bb.X(POS[0])}" y1="${bb.Y(POS[1])}" x2="${bb.X(goal[0])}" y2="${bb.Y(goal[1])}" stroke="var(--q)" stroke-width="2.5" stroke-dasharray="5 4"/>`;
+    a+=`<circle cx="${bb.X(POS[0])}" cy="${bb.Y(POS[1])}" r="6" fill="var(--q)"/>`;
+    a+=`<circle cx="${bb.X(goal[0])}" cy="${bb.Y(goal[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s0a').innerHTML=S.svg(bb,a,'직진 OK');
+    // 자동차: 방향이 +x. 목표가 옆/뒤면 곧장 불가 표시
+    const ang=Math.atan2(goal[1]-POS[1],goal[0]-POS[0]); const off=Math.abs(ang-TH);
+    const direct = off<0.25; // 거의 정면이면 곧장 가능
+    let c=carSVG(bb,POS,TH,'var(--good)')+arrow(bb,POS,TH,'var(--good)',1.2);
+    c+=`<line x1="${bb.X(POS[0])}" y1="${bb.Y(POS[1])}" x2="${bb.X(goal[0])}" y2="${bb.Y(goal[1])}" stroke="${direct?'var(--good)':'var(--k)'}" stroke-width="2" stroke-dasharray="5 4"/>`;
+    c+=`<circle cx="${bb.X(goal[0])}" cy="${bb.Y(goal[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s0b').innerHTML=S.svg(bb,c,direct?'곧장 OK':'곧장 ✗');
+    document.getElementById('lab0').innerHTML= direct?`목표가 차의 <b style="color:var(--good)">정면</b>이라 곧장 갈 수 있어요. 옆/뒤로 끌어보세요.`:`목표가 <b style="color:var(--k)">정면이 아니에요</b> — 점 로봇은 곧장(파랑), 차는 곧장 불가(빨강). 돌면서 가야 해요.`; }
+  const el=document.getElementById('s0b'); let drag=false;
+  function px(e){ const sv=el.querySelector('svg'); if(!sv)return null; const r=sv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*bb.W/bb.s-bb.ox/bb.s, -((e.clientY-r.top)/r.height*bb.H-bb.oy)/bb.s]; }
+  function set(e){ const p=px(e); if(p){ goal=[clamp(p[0],-2.5,6),clamp(p[1],-3,3)]; render(); } }
+  el.addEventListener('pointerdown',e=>{drag=true;set(e);}); el.addEventListener('pointermove',e=>{if(drag)set(e);});
+  const up=()=>drag=false; el.addEventListener('pointerup',up); el.addEventListener('pointerleave',up);
+  // s0a도 드래그 가능하게
+  const ela=document.getElementById('s0a'); let d2=false;
+  function pxa(e){ const sv=ela.querySelector('svg'); if(!sv)return null; const r=sv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*bb.W/bb.s-bb.ox/bb.s, -((e.clientY-r.top)/r.height*bb.H-bb.oy)/bb.s]; }
+  function seta(e){ const p=pxa(e); if(p){ goal=[clamp(p[0],-2.5,6),clamp(p[1],-3,3)]; render(); } }
+  ela.addEventListener('pointerdown',e=>{d2=true;seta(e);}); ela.addEventListener('pointermove',e=>{if(d2)seta(e);});
+  ela.addEventListener('pointerup',()=>d2=false); ela.addEventListener('pointerleave',()=>d2=false);
+  render();
+})();
+
+// ===== STEP 1: min turning radius =====
+(function(){ const b=board(); let R=1.5; const POS=[2.2,0], TH=0;
+  function render(){ document.getElementById('R1v').textContent=fmt(R,1);
+    // 왼/오 회전 원: 중심은 진행방향 수직으로 ±R
+    const cl=[POS[0]-Math.sin(TH)*R, POS[1]+Math.cos(TH)*R]; const cr=[POS[0]+Math.sin(TH)*R, POS[1]-Math.cos(TH)*R];
+    let s=`<circle cx="${b.X(cl[0])}" cy="${b.Y(cl[1])}" r="${R*b.s}" fill="none" stroke="var(--q)" stroke-width="2" stroke-dasharray="5 4"/>`;
+    s+=`<circle cx="${b.X(cr[0])}" cy="${b.Y(cr[1])}" r="${R*b.s}" fill="none" stroke="var(--v)" stroke-width="2" stroke-dasharray="5 4"/>`;
+    s+=`<text x="${b.X(cl[0])}" y="${b.Y(cl[1])}" fill="var(--q)" font-size="11" text-anchor="middle" font-family="monospace">왼쪽 회전</text>`;
+    s+=`<text x="${b.X(cr[0])}" y="${b.Y(cr[1])}" fill="var(--v)" font-size="11" text-anchor="middle" font-family="monospace">오른쪽 회전</text>`;
+    // 직진 방향 화살표
+    s+=`<line x1="${b.X(POS[0])}" y1="${b.Y(POS[1])}" x2="${b.X(POS[0]+2.5)}" y2="${b.Y(POS[1])}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+    s+=carSVG(b,POS,TH,'var(--good)');
+    document.getElementById('s1').innerHTML=S.svg(b,s,'R = '+fmt(R,1));
+    document.getElementById('lab1').innerHTML=`최소 회전 반경 <b>${fmt(R,1)}</b> — 두 원(왼/오)이 가장 급한 회전이에요. 그 <b>안쪽으론 못 들어가요</b>. R↓ 민첩 · R↑ 둔함.`; }
+  document.getElementById('R1').addEventListener('input',e=>{R=+e.target.value; render();}); render();
+})();
+
+// ===== STEP 2: lane-change S curve =====
+(function(){ const b=board(); const R=1.4; let shift=1.4, t=0, timer=null, traj=[];
+  function buildTraj(){ // 좌호 + 우호로 lat=shift 이동, 시작·끝 방향 +x
+    // 각 호의 중심각 a: shift = 2R(1-cos a). a = acos(1 - shift/(2R))
+    const ratio=clamp(1-shift/(2*R),-1,1); const a=Math.acos(ratio);
+    const start=[1.0,0]; const pts=[]; const N=40;
+    // 1) 좌호: 중심 (start - 0, +R) ; 회전 중심 cl=[start[0], start[1]+R], 시작각 -90도, 반시계로 a
+    const cl=[start[0], start[1]+R];
+    for(let k=0;k<=N;k++){ const ang=-Math.PI/2 + a*k/N; pts.push([cl[0]+R*Math.cos(ang), cl[1]+R*Math.sin(ang)]); }
+    const mid=pts[pts.length-1]; const midHeading=a; // 진행방향 = +a (위로 틀어짐)
+    // 2) 우호: 중심은 mid에서 진행방향 오른쪽(-수직) R
+    const cr=[mid[0]+Math.sin(midHeading)*R, mid[1]-Math.cos(midHeading)*R];
+    const startAng=Math.atan2(mid[1]-cr[1], mid[0]-cr[0]);
+    for(let k=1;k<=N;k++){ const ang=startAng - a*k/N; pts.push([cr[0]+R*Math.cos(ang), cr[1]+R*Math.sin(ang)]); }
+    return pts; }
+  function headingAt(i){ const a=traj[Math.max(0,i-1)],c=traj[Math.min(traj.length-1,i+1)]; return Math.atan2(c[1]-a[1],c[0]-a[0]); }
+  function render(){ document.getElementById('shift2v').textContent=fmt(shift,1);
+    let s='';
+    // 차선 가이드
+    s+=`<line x1="${b.X(0)}" y1="${b.Y(0)}" x2="${b.X(9)}" y2="${b.Y(0)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="6 6"/>`;
+    s+=`<line x1="${b.X(0)}" y1="${b.Y(shift)}" x2="${b.X(9)}" y2="${b.Y(shift)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="6 6"/>`;
+    s+=pathSVG(b,traj,'var(--good)',3);
+    const idx=Math.min(traj.length-1,Math.floor(t)); const p=traj[idx];
+    s+=carSVG(b,p,headingAt(idx),'var(--good)');
+    document.getElementById('s2').innerHTML=S.svg(b,s,'차선 변경');
+    document.getElementById('lab2').innerHTML= timer?`두 호로 옆으로 ${fmt(shift,1)}만큼 이동 중 — 방향은 결국 원래대로(+x).`:(t>=traj.length-1?`차선 변경 완료 — 처음·끝 방향이 같죠(옆으로만 ${fmt(shift,1)} 이동). 곧장은 불가능했어요.`:'"차선 변경"으로 S자 기동을 보세요.'); }
+  function rebuild(){ traj=buildTraj(); t=0; render(); }
+  function play(){ if(timer)clearInterval(timer); t=0; timer=setInterval(()=>{ t+=1; if(t>=traj.length-1){t=traj.length-1;clearInterval(timer);timer=null;} render(); },28); }
+  document.getElementById('go2').onclick=()=>{ if(t>=traj.length-1)rebuild(); play(); };
+  document.getElementById('rst2').onclick=()=>{ if(timer)clearInterval(timer); timer=null; rebuild(); };
+  document.getElementById('shift2').addEventListener('input',e=>{ shift=+e.target.value; if(timer){clearInterval(timer);timer=null;} rebuild(); });
+  rebuild();
+})();
+
+// ===== STEP 3: (x,y,theta) space =====
+(function(){ const b=board();
+  // 같은 (x,y)에서 다른 방향이면 다른 경로 — 두 자세 화살표
+  let s='';
+  const goal=[7,1.2];
+  s+=`<circle cx="${b.X(goal[0])}" cy="${b.Y(goal[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+  // 같은 출발 위치, 두 방향
+  const P0=[1.5,-0.6];
+  s+=carSVG(b,P0,0,'var(--good)')+arrow(b,P0,0,'var(--good)',1.0);
+  s+=carSVG(b,[P0[0],P0[1]+1.6],Math.PI*0.6,'var(--v)')+arrow(b,[P0[0],P0[1]+1.6],Math.PI*0.6,'var(--v)',1.0);
+  s+=`<text x="${b.X(P0[0]+1.2)}" y="${b.Y(P0[1]-0.5)}" fill="var(--good)" font-size="11" font-family="monospace">같은 위치·방향A</text>`;
+  s+=`<text x="${b.X(P0[0]+1.2)}" y="${b.Y(P0[1]+1.4)}" fill="var(--v)" font-size="11" font-family="monospace">방향B → 경로 달라짐</text>`;
+  document.getElementById('s3').innerHTML=S.svg(b,s,'(x, y, θ)');
+  document.getElementById('lab3').innerHTML=`같은 (x,y)라도 <b>바라보는 방향</b>이 다르면 목표까지 경로가 완전히 달라져요 — 그래서 방향 θ도 <b>계획에 포함</b>해야 해요.`;
+})();
+</script>
+</body>
+</html>

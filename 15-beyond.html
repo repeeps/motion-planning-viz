@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15 · 너머에는 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--muted); min-width:96px;}
+  .ctl input[type=range]{flex:1; min-width:140px;}
+  .uc{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:8px 0;}
+  .uc .u{background:var(--panel-2); border:1px solid var(--line); border-radius:13px; padding:14px;}
+  .uc .u .e{font-size:22px;} .uc .u h4{margin:6px 0 5px; font-size:14px; color:var(--ink);} .uc .u p{margin:0; font-size:12.5px; color:var(--muted); line-height:1.55;}
+  .cmap{display:flex; flex-direction:column; gap:7px; margin-top:6px;}
+  .cmap a{display:flex; gap:12px; align-items:center; text-decoration:none; background:var(--panel-2); border:1px solid var(--line); border-left:3px solid var(--q); border-radius:10px; padding:9px 13px; transition:.15s;}
+  .cmap a:hover{transform:translateX(3px); border-color:var(--q);}
+  .cmap .n{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--q); font-weight:700; min-width:54px;}
+  .cmap .t{color:var(--ink); font-size:13.5px; font-weight:700;}
+  .track{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:8px 0;}
+  .track .tk{text-align:center; background:var(--panel-2); border:1px solid var(--line); border-radius:12px; padding:14px 8px;}
+  .track .tk .e{font-size:24px;} .track .tk h4{margin:6px 0 3px; font-size:13px;} .track .tk p{margin:0; font-size:11.5px; color:var(--muted);}
+  .track .tk.now{border-color:var(--q); box-shadow:0 0 0 1px var(--q) inset;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 5 · 실전 · CH 15</div>
+    <h1>너머에는 — 그리고 제어로</h1>
+    <p class="intro">기본기는 다 봤어요 — 공간을 점으로 바꾸고(C-space), 격자·필드·샘플링으로 길을 찾고, 다듬고, 차의 제약과 변화에 대응하기까지. 마지막으로 <b>실전을 더 똑똑하게</b> 만드는 갈래들과, 이 계획이 결국 <b>어디로 이어지는지</b>를 짚어요. 계획의 끝은 늘 <b>제어</b> — "이 길을 실제 바퀴·모터로 어떻게 따라갈까"로 넘어가죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 벽에서 멀찍이</button>
+    <button data-s="1">01 · 격자에 안 갇힌 길</button>
+    <button data-s="2">02 · 더 넓은 세계</button>
+    <button data-s="3">03 · 계획 → 제어, 그리고 회고</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — Costmaps</span>
+    <h2>"막힘/뚫림" 말고 — 부드러운 비용</h2>
+    <p class="lead">실전에선 칸을 <b>막힘/뚫림</b> 둘로만 안 나눠요. 벽에 <b>바짝 붙으면 위험</b>하니, 장애물 둘레에 <b>비용을 부드럽게</b> 깔아요(가까울수록 비쌈). 그러면 최단 탐색이 알아서 <b>벽에서 적당히 떨어진</b> 안전한 길을 골라요. <b>안전 여유</b>를 키우면 길이 벽에서 더 물러나요.</p>
+    <div class="ctl"><label>안전 여유</label><input type="range" id="pad0" min="0" max="6" step="1" value="3"><span class="big" id="pad0v" style="min-width:40px"></span></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 이런 비용 지도를 <b>코스트맵</b>이라 해요. "되도록 부드럽게/벽에서 멀리" 같은 <b>선호</b>를 비용에 녹여 넣죠.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Any-Angle Paths</span>
+    <h2>꼭 격자 방향으로만 갈 필요는 없다</h2>
+    <p class="lead">격자 탐색은 길을 <b>상하좌우·대각선</b>에 가둬 계단처럼 만들었죠. <b>any-angle</b> 방법은 "두 점이 <b>서로 보이면(직선으로 막힘 없으면) 그냥 직선으로 잇자</b>"는 아이디어로, 격자 위에서도 <b>임의 각도</b>의 매끈한 길을 뽑아요. <span style="color:var(--v)">격자 경로</span>와 <span style="color:var(--good)">any-angle 경로</span>를 비교하세요.</p>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 격자의 단순함은 살리되 계단 문제를 줄여요(Theta* 같은 방법). 다듬기(CH11)와 사촌지간이죠.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — A Wider World</span>
+    <h2>더 멀리 있는 갈래들</h2>
+    <p class="lead">이 코스는 <b>입문</b>이에요. 그 너머엔 실전을 떠받치는 풍성한 갈래들이 있어요 — 한 번씩 들어보면 좋을 이름들이에요.</p>
+    <div class="uc">
+      <div class="u"><div class="e">🗺️</div><h4>D* / 증분 탐색</h4><p>바뀐 부분만 빠르게 고쳐 다시 계획. 화성 탐사차에도 쓰였어요.</p></div>
+      <div class="u"><div class="e">📐</div><h4>any-angle (Theta*)</h4><p>격자에 안 갇힌 임의 각도 경로. 계단을 근본부터 줄여요.</p></div>
+      <div class="u"><div class="e">🧠</div><h4>학습 기반</h4><p>신경망이 "어디를 탐색할지" 어림을 배우거나, 경험으로 좋은 표본을 제안해요.</p></div>
+      <div class="u"><div class="e">👥</div><h4>다개체 계획</h4><p>여러 로봇이 서로 안 부딪히게 동시에 — 창고 로봇 군집처럼.</p></div>
+      <div class="u"><div class="e">🤸</div><h4>고자유도 팔</h4><p>관절 많은 로봇 팔의 충돌 없는 동작(주로 샘플링 기반).</p></div>
+      <div class="u"><div class="e">↩️</div><h4>Reeds–Shepp</h4><p>후진까지 쓰는 차량 경로(주차). Dubins의 확장이에요.</p></div>
+    </div>
+    <p class="big" id="lab2">공통점은 하나 — 이 코스에서 본 <b>기본 발상(공간을 줄이고, 탐색하고, 다듬고, 다시 계획)</b>의 변주예요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — To Control, and a Recap</span>
+    <h2>계획은 제어로 넘어간다</h2>
+    <p class="lead">계획이 길(궤적)을 내놓으면, 그걸 <b>실제로 따라가게</b> 만드는 건 <b>제어</b>예요 — 바퀴·모터에 매 순간 명령을 주고, 어긋나면 바로잡죠. 그리고 "<b>내가 어디 있나</b>"는 <b>추정</b>이 답해요. 셋이 맞물려 돌아가야 로봇이 비로소 움직여요.</p>
+    <div class="track">
+      <div class="tk"><div class="e">📍</div><h4>추정</h4><p>어디 있나</p></div>
+      <div class="tk now"><div class="e">🧭</div><h4>계획 (이 코스)</h4><p>어디로 갈까</p></div>
+      <div class="tk"><div class="e">🎚️</div><h4>제어</h4><p>어떻게 따라갈까</p></div>
+    </div>
+    <h3 style="margin:18px 0 6px; font-size:16px">코스 한눈에 — 우리가 지나온 길</h3>
+    <div class="cmap" id="cmap"></div>
+    <p class="big" id="lab3" style="margin-top:12px">수식 없이도 여기까지 왔어요. 길을 <b>찾고·다듬고·다시 짜는</b> 직관이 잡혔다면 충분해요. 👏</p>
+    <p class="note" style="margin-top:14px">→ 처음으로 <a href="index.html" style="color:var(--q);font-weight:700">목차</a>에서 다시 둘러보거나, <b>추정·제어</b> 트랙으로 옆 걸음을. 수고했어요!</p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 코스트맵·경로 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '15 · 너머에는');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+function gridBoard(cols,rows,cs){ const ox=12,oy=12; return {cols,rows,cs,ox,oy,W:ox*2+cols*cs,H:oy*2+rows*cs,
+  gx:x=>ox+x*cs, gy:y=>oy+y*cs, cx:x=>ox+(x+0.5)*cs, cy:y=>oy+(y+0.5)*cs}; }
+function cellRect(b,x,y,fill,stroke,sw){ return `<rect x="${b.gx(x)+0.5}" y="${b.gy(y)+0.5}" width="${b.cs-1}" height="${b.cs-1}" rx="2" fill="${fill}" stroke="${stroke||'var(--line)'}" stroke-width="${sw||.5}"/>`; }
+function marker(b,p,c){ return `<circle cx="${b.cx(p[0])}" cy="${b.cy(p[1])}" r="6" fill="${c}" stroke="#fff" stroke-width="1.5"/>`; }
+const GC=16,GR=11,CS=22, ST=[1,9], GO=[14,1];
+function baseWalls(){ return [[5,3],[5,4],[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[10,0],[10,1],[10,2],[10,3],[10,4],[10,5],[10,6]]; }
+
+// ===== STEP 0: costmap (soft inflation) =====
+(function(){ const b=gridBoard(GC,GR,CS); let pad=3; const walls=baseWalls();
+  const wallSet=new Set(walls.map(([x,y])=>P.key(x,y)));
+  // 각 칸의 벽까지 최소거리 → 비용
+  function distToWall(x,y){ let m=Infinity; for(const [wx,wy] of walls){ const d=Math.hypot(x-wx,y-wy); if(d<m)m=d; } return m; }
+  function render(){ document.getElementById('pad0v').textContent=pad;
+    const g=P.makeGrid(GC,GR,false); wallSet.forEach(k=>g.walls.add(k));
+    // 코스트맵: 벽 가까울수록 비용↑ (pad 칸 이내)
+    for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ if(wallSet.has(P.key(x,y)))continue; const d=distToWall(x,y);
+      if(pad>0 && d<=pad){ const c=1+ Math.round((pad-d+1)*4*(1)); g.cost.set(P.key(x,y), Math.max(1,c)); } }
+    const r=P.search(g,ST,GO,{mode:'dijkstra'});
+    let s='';
+    for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const k=P.key(x,y);
+      if(wallSet.has(k)){ s+=cellRect(b,x,y,'rgba(123,156,255,.2)','var(--q)',1); continue; }
+      const cost=g.cost.get(k)||1; const t=Math.min(1,(cost-1)/((pad||1)*4)); // 0..1
+      s+=cellRect(b,x,y,`rgba(251,113,133,${(0.04+0.32*t).toFixed(3)})`,'var(--line)',.4); }
+    if(r.found){ let d=''; r.path.forEach((p,i)=>d+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' '); s+=`<path d="${d}" fill="none" stroke="var(--good)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`; }
+    s+=marker(b,ST,'var(--good)')+marker(b,GO,'var(--hot)');
+    document.getElementById('s0').innerHTML=S.svg({W:b.W,H:b.H},s,'코스트맵');
+    document.getElementById('lab0').innerHTML= pad===0?`안전 여유 0 → 그냥 최단(벽에 바짝 붙어도 OK).`:`안전 여유 ${pad} → 벽 둘레가 <b style="color:var(--hot)">비싸져</b> 길이 가운데로 물러났어요(더 안전).`; }
+  document.getElementById('pad0').addEventListener('input',e=>{pad=+e.target.value; render();}); render();
+})();
+
+// ===== STEP 1: any-angle vs grid =====
+(function(){ const b=gridBoard(GC,GR,CS); const walls=baseWalls(); const wallSet=new Set(walls.map(([x,y])=>P.key(x,y)));
+  const g=P.makeGrid(GC,GR,false); wallSet.forEach(k=>g.walls.add(k));
+  const gridR=P.search(g,ST,GO,{mode:'astar'});
+  // any-angle: 격자 경로를 line-of-sight로 단축(셀 중심 기준 충돌검사)
+  function losFree(a,c){ // 두 셀 중심 잇는 선이 벽 셀을 지나나(샘플링)
+    const steps=Math.ceil(Math.hypot(c[0]-a[0],c[1]-a[1])*4);
+    for(let i=0;i<=steps;i++){ const x=a[0]+(c[0]-a[0])*i/steps, y=a[1]+(c[1]-a[1])*i/steps;
+      if(wallSet.has(P.key(Math.round(x),Math.round(y)))) return false; } return true; }
+  function anyAngle(path){ if(!path||path.length<2)return path; const out=[path[0]]; let i=0;
+    while(i<path.length-1){ let j=path.length-1; for(;j>i+1;j--){ if(losFree(path[i],path[j]))break; } out.push(path[j]); i=j; } return out; }
+  const aa=anyAngle(gridR.path);
+  let s='';
+  for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const w=wallSet.has(P.key(x,y)); s+=cellRect(b,x,y,w?'rgba(123,156,255,.2)':'rgba(123,156,255,.05)',w?'var(--q)':'var(--line)',w?1:.5); }
+  let dg=''; gridR.path.forEach((p,i)=>dg+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' ');
+  s+=`<path d="${dg}" fill="none" stroke="var(--v)" stroke-width="3" stroke-dasharray="5 4" stroke-linejoin="round"/>`;
+  let da=''; aa.forEach((p,i)=>da+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' ');
+  s+=`<path d="${da}" fill="none" stroke="var(--good)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  aa.forEach(p=>s+=`<circle cx="${b.cx(p[0])}" cy="${b.cy(p[1])}" r="3" fill="var(--good)"/>`);
+  s+=marker(b,ST,'var(--good)')+marker(b,GO,'var(--hot)');
+  document.getElementById('s1').innerHTML=S.svg({W:b.W,H:b.H},s,'격자 vs any-angle');
+  function plen(p){let L=0;for(let i=1;i<p.length;i++)L+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);return L;}
+  document.getElementById('lab1').innerHTML=`격자 경로 <b style="color:var(--v)">${fmt(plen(gridR.path),1)}</b>(${gridR.path.length}꼭짓점, 계단) vs any-angle <b style="color:var(--good)">${fmt(plen(aa),1)}</b>(${aa.length}꼭짓점, 직선) — 더 짧고 매끈해요.`;
+})();
+
+// ===== STEP 3: course recap list =====
+(function(){ const chs=[
+  ['01','설정공간'],['02','그래프 탐색'],['03','BFS'],['04','다익스트라'],['05','A*'],['06','격자의 한계'],['07','포텐셜 필드'],['08','PRM'],['09','RRT'],['10','RRT*'],['11','경로 다듬기'],['12','궤적 최적화'],['13','차처럼 움직이기'],['14','리플래닝'] ];
+  const html=chs.map(([n,t])=>`<a href="${n}-${({'01':'cspace','02':'graph','03':'bfs','04':'dijkstra','05':'astar','06':'grid-limits','07':'potential','08':'prm','09':'rrt','10':'rrt-star','11':'smoothing','12':'trajectory','13':'carlike','14':'replanning'})[n]}.html"><span class="n">${n}</span><span class="t">${t}</span></a>`).join('');
+  document.getElementById('cmap').innerHTML=html;
+})();
+</script>
+</body>
+</html>

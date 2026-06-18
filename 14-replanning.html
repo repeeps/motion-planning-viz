@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14 · 리플래닝 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .leg{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0;}
+  .leg i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-1px; margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 5 · 실전 · CH 14</div>
+    <h1>움직이는 장애물 · 리플래닝</h1>
+    <p class="intro">지금까지 세상은 <b>가만히</b> 있었어요. 하지만 진짜 환경엔 사람·차·문이 <b>움직이고</b>, 센서로 새 장애물이 <b>갑자기</b> 나타나죠. 그때마다 처음부터 길을 다시 짜면 너무 느려요. 똑똑한 방법은 — <b>바뀐 부분만 고쳐 계산하고(리플래닝)</b>, 나머지는 <b>재사용</b>하는 거예요. 그리고 이 모든 게 "어디 있나(추정) → 어디로(계획) → 어떻게(제어)"의 <b>실시간 루프</b> 안에서 돌아가요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 길이 막혔다</button>
+    <button data-s="1">01 · 바뀐 곳만 고친다</button>
+    <button data-s="2">02 · 달리며 다시 짠다</button>
+    <button data-s="3">03 · 추정·계획·제어 루프</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — The Path Is Blocked</span>
+    <h2>잘 가던 길에 — 갑자기 장애물이</h2>
+    <p class="lead">미리 찾아둔 경로(초록)를 따라가던 중, <b>장애물 두기</b>를 누르면 경로 위에 새 장애물이 떨어져요. 길이 <b>막히죠</b>. 이제 다시 길을 찾아야 하는데 — <b>처음부터 전부</b> 다시? 그건 낭비예요. 바뀐 건 <b>작은 한 곳</b>뿐이니까요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="blk0">🧱 장애물 두기</button> <button class="btn" id="rst0">↺ 리셋</button></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 세상의 <b>대부분은 그대로</b>예요. 그대로인 부분의 계산을 <b>버리지 않고 재사용</b>하면 빠르겠죠.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Fix Only What Changed</span>
+    <h2>값이 바뀐 칸만 다시 계산한다</h2>
+    <p class="lead">각 칸의 "목표까지 거리"를 미리 구해뒀다고 해요. 장애물이 생기면 — <span style="color:var(--v)">그 영향으로 거리가 바뀌는 칸(보라)</span>만 다시 계산하면 돼요. <b>멀리 떨어진, 영향 없는 칸</b>들은 손도 안 대고 그대로 써요. <b>장애물 두기</b>로 "다시 계산할 칸"이 얼마나 적은지 보세요.</p>
+    <div class="leg"><span><i style="background:rgba(167,139,250,.5)"></i>다시 계산(바뀜)</span><span><i style="background:rgba(123,156,255,.15)"></i>그대로 재사용</span></div>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="blk1">🧱 장애물 두기</button> <button class="btn" id="rst1">↺ 리셋</button></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ "전부 다시" 대신 "바뀐 곳만" — 이게 D* 계열 <b>증분(incremental) 리플래닝</b>의 핵심이에요. 변화가 작을수록 훨씬 빨라요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Replan While Moving</span>
+    <h2>멈추지 않고 — 달리며 길을 고친다</h2>
+    <p class="lead">실전은 더 역동적이에요. <span style="color:var(--good)">로봇</span>이 목표로 달리는 동안 <span style="color:var(--hot)">장애물</span>이 가로질러 움직여요. 로봇은 <b>매 순간 현재 위치에서 길을 다시 짜며</b> 멈추지 않고 나아가요. <b>출발</b>을 눌러 움직이는 장애물을 피해 목표에 닿는 걸 보세요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go2">▶ 출발</button> <button class="btn" id="rst2">↺ 리셋</button></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ "감지 → 다시 계획 → 한 걸음 이동"을 빠르게 반복해요. 리플래닝이 빨라야 이 루프가 실시간으로 돌죠.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — The Estimate–Plan–Control Loop</span>
+    <h2>추정 → 계획 → 제어, 그리고 다시</h2>
+    <p class="lead">리플래닝은 더 큰 <b>실시간 루프</b>의 한 조각이에요. <b>추정</b>(센서로 "내가·남이 어디 있나")으로 지도를 갱신하고 → <b>계획</b>(이 챕터: "어디로 갈까")으로 경로를 다시 긋고 → <b>제어</b>("바퀴를 어떻게")로 한 걸음 움직이고 → 또 추정… 이 고리가 초당 수십 번 돌며 로봇을 살아 움직이게 해요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 모션 플래닝의 큰 그림을 거의 다 봤어요. 마지막으로 더 넓은 세계와 다음 갈 곳을. 다음 → <a href="15-beyond.html" style="color:var(--q);font-weight:700">CH 15 · 너머에는</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 거리장·리플래닝·루프 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '14 · 리플래닝');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+function gridBoard(cols,rows,cs){ const ox=12,oy=12; return {cols,rows,cs,ox,oy,W:ox*2+cols*cs,H:oy*2+rows*cs,
+  gx:x=>ox+x*cs, gy:y=>oy+y*cs, cx:x=>ox+(x+0.5)*cs, cy:y=>oy+(y+0.5)*cs}; }
+function cellRect(b,x,y,fill,stroke,sw){ return `<rect x="${b.gx(x)+0.5}" y="${b.gy(y)+0.5}" width="${b.cs-1}" height="${b.cs-1}" rx="2" fill="${fill}" stroke="${stroke||'var(--line)'}" stroke-width="${sw||.5}"/>`; }
+const GC=16,GR=11,CS=22, ST=[1,5], GO=[14,5];
+function baseGrid(){ const g=P.makeGrid(GC,GR,false);
+  const walls=[[5,0],[5,1],[5,2],[5,3],[10,7],[10,8],[10,9],[10,10],[10,6]];
+  walls.forEach(([x,y])=>g.walls.add(P.key(x,y))); return g; }
+function marker(b,p,c,r){ return `<circle cx="${b.cx(p[0])}" cy="${b.cy(p[1])}" r="${r||6}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`; }
+function pathSVG(b,path,c){ let d=''; path.forEach((p,i)=>d+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`; }
+// 목표까지 거리장(BFS from goal)
+function distField(g){ const d=new Map(); const q=[GO]; d.set(P.key(GO[0],GO[1]),0); let qi=0;
+  while(qi<q.length){ const [x,y]=q[qi++]; const c=d.get(P.key(x,y));
+    for(const[dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx,ny=y+dy; if(P.blocked(g,nx,ny))continue; const k=P.key(nx,ny); if(d.has(k))continue; d.set(k,c+1); q.push([nx,ny]); } }
+  return d; }
+function wallsSVG(b,g){ let s=''; for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const w=g.walls.has(P.key(x,y));
+  s+=cellRect(b,x,y,w?'rgba(123,156,255,.18)':'rgba(123,156,255,.05)',w?'var(--q)':'var(--line)',w?1:.5); } return s; }
+const NEWOBS=[[8,5],[8,4],[8,6]]; // 경로 위에 떨어지는 새 장애물
+
+// ===== STEP 0: blocked =====
+(function(){ const b=gridBoard(GC,GR,CS); let g=baseGrid(); let blocked=false;
+  function render(){ const r=P.search(g,ST,GO,{mode:'astar'});
+    let s=wallsSVG(b,g);
+    if(blocked) NEWOBS.forEach(([x,y])=>s+=cellRect(b,x,y,'rgba(251,113,133,.4)','var(--k)',1.5));
+    if(r.found) s+=pathSVG(b,r.path,'var(--good)');
+    s+=marker(b,ST,'var(--good)')+marker(b,GO,'var(--hot)');
+    document.getElementById('s0').innerHTML=S.svg({W:b.W,H:b.H},s,'경로');
+    document.getElementById('lab0').innerHTML= !blocked?`경로 확보(길이 ${r.path.length-1}). "장애물 두기"를 눌러 길을 막아보세요.`:(r.found?`새 장애물 등장 → 길이 막혔지만 <b style="color:var(--good)">우회로 재계산됨</b>(새 길이 ${r.path.length-1}). 다음 스텝에서 "어떻게 빨리"를 봐요.`:'완전히 막힘'); }
+  document.getElementById('blk0').onclick=()=>{ g=baseGrid(); NEWOBS.forEach(([x,y])=>g.walls.add(P.key(x,y))); blocked=true; render(); };
+  document.getElementById('rst0').onclick=()=>{ g=baseGrid(); blocked=false; render(); }; render();
+})();
+
+// ===== STEP 1: only changed cells =====
+(function(){ const b=gridBoard(GC,GR,CS); let g=baseGrid(); const before=distField(g); let blocked=false;
+  function render(){ let after=before, changed=new Set();
+    if(blocked){ const g2=baseGrid(); NEWOBS.forEach(([x,y])=>g2.walls.add(P.key(x,y))); after=distField(g2);
+      for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const k=P.key(x,y); const a=before.get(k), c=after.get(k);
+        if((a==null)!==(c==null) || a!==c) changed.add(k); } }
+    let s='';
+    for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const k=P.key(x,y); const w=g.walls.has(k)||(blocked&&NEWOBS.some(([nx,ny])=>nx===x&&ny===y));
+      let fill='rgba(123,156,255,.05)',stroke='var(--line)',sw=.5;
+      if(w){ fill='rgba(123,156,255,.18)'; stroke='var(--q)'; sw=1; if(blocked&&NEWOBS.some(([nx,ny])=>nx===x&&ny===y)){fill='rgba(251,113,133,.35)';stroke='var(--k)';} }
+      else if(changed.has(k)){ fill='rgba(167,139,250,.45)'; stroke='rgba(167,139,250,.6)'; }
+      s+=cellRect(b,x,y,fill,stroke,sw); }
+    s+=marker(b,ST,'var(--good)')+marker(b,GO,'var(--hot)');
+    document.getElementById('s1').innerHTML=S.svg({W:b.W,H:b.H},s,'바뀐 칸');
+    const total=GC*GR;
+    document.getElementById('lab1').innerHTML= !blocked?'"장애물 두기"로 어떤 칸들의 거리가 바뀌는지 보세요.':`다시 계산할 칸 <b style="color:var(--v)">${changed.size}</b> / 전체 ${total} — <b>${(100*changed.size/total).toFixed(0)}%</b>만 고치면 돼요. 나머지 ${total-changed.size}칸은 그대로 재사용.`; }
+  document.getElementById('blk1').onclick=()=>{ blocked=true; render(); };
+  document.getElementById('rst1').onclick=()=>{ blocked=false; render(); }; render();
+})();
+
+// ===== STEP 2: replan while moving =====
+(function(){ const b=gridBoard(GC,GR,CS); let robot,obsY,obsDir,timer=null,reached=false,t=0;
+  const OBSX=7;
+  function gridWithObs(){ const g=baseGrid(); for(let dy=-1;dy<=1;dy++){ const y=obsY+dy; if(y>=0&&y<GR)g.walls.add(P.key(OBSX,y)); } return g; }
+  function reset(){ if(timer){clearInterval(timer);timer=null;} robot=ST.slice(); obsY=2; obsDir=1; reached=false; t=0; render(); }
+  function render(){ const g=gridWithObs(); const r=P.search(g,robot,GO,{mode:'astar'});
+    let s=wallsSVG(b,g);
+    for(let dy=-1;dy<=1;dy++){ const y=obsY+dy; if(y>=0&&y<GR)s+=cellRect(b,OBSX,y,'rgba(251,113,133,.4)','var(--k)',1.5); }
+    if(r.found) s+=pathSVG(b,r.path,'var(--good)');
+    s+=marker(b,robot,'var(--good)',7)+marker(b,GO,'var(--hot)');
+    document.getElementById('s2').innerHTML=S.svg({W:b.W,H:b.H},s,'실시간');
+    document.getElementById('lab2').innerHTML= reached?`목표 도착! 움직이는 장애물을 매 걸음 <b>다시 계획</b>하며 피했어요.`:(timer?`달리며 리플래닝 중… (걸음 ${t})`:'"출발"로 움직이는 장애물을 피해 가보세요.'); }
+  function tick(){ // 장애물 이동
+    obsY+=obsDir; if(obsY<=1||obsY>=GR-2)obsDir*=-1;
+    const g=gridWithObs(); const r=P.search(g,robot,GO,{mode:'astar'});
+    if(r.found&&r.path.length>1){ robot=r.path[1]; } t++;
+    if(robot[0]===GO[0]&&robot[1]===GO[1]){ reached=true; clearInterval(timer); timer=null; }
+    render(); }
+  function play(){ if(timer)clearInterval(timer); if(reached||robot[0]!==ST[0]||robot[1]!==ST[1])reset(); timer=setInterval(tick,260); }
+  document.getElementById('go2').onclick=play;
+  document.getElementById('rst2').onclick=reset; reset();
+})();
+
+// ===== STEP 3: estimate-plan-control loop =====
+(function(){ const W=440,H=240,cx=220,cy=120,Rr=78;
+  const nodes=[{a:-Math.PI/2,t:'추정',sub:'어디 있나',c:'var(--q)'},{a:-Math.PI/2+2.094,t:'계획',sub:'어디로',c:'var(--good)'},{a:-Math.PI/2+4.188,t:'제어',sub:'어떻게',c:'var(--v)'}];
+  let s='';
+  // 순환 화살표(원호)
+  s+=`<circle cx="${cx}" cy="${cy}" r="${Rr}" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 5"/>`;
+  // 회전 방향 화살표 3개
+  for(let k=0;k<3;k++){ const a=-Math.PI/2+k*2.094+1.0; const x=cx+Math.cos(a)*Rr,y=cy+Math.sin(a)*Rr; const ta=a+Math.PI/2;
+    s+=`<path d="M${x-Math.cos(ta)*6} ${y-Math.sin(ta)*6} L${x+Math.cos(a-0.3)*0} ${y}" stroke="none"/>`;
+    s+=`<polygon points="${x},${y} ${x-Math.cos(ta)*7-Math.cos(a)*4},${y-Math.sin(ta)*7-Math.sin(a)*4} ${x-Math.cos(ta)*7+Math.cos(a)*4},${y-Math.sin(ta)*7+Math.sin(a)*4}" fill="var(--muted)"/>`; }
+  nodes.forEach(n=>{ const x=cx+Math.cos(n.a)*Rr, y=cy+Math.sin(n.a)*Rr;
+    s+=`<circle cx="${x}" cy="${y}" r="30" fill="var(--panel-2)" stroke="${n.c}" stroke-width="2"/>`;
+    s+=`<text x="${x}" y="${y-2}" fill="${n.c}" font-size="14" font-weight="700" text-anchor="middle" font-family="monospace">${n.t}</text>`;
+    s+=`<text x="${x}" y="${y+13}" fill="var(--muted)" font-size="10" text-anchor="middle" font-family="monospace">${n.sub}</text>`; });
+  s+=`<text x="${cx}" y="${cy+4}" fill="var(--faint)" font-size="11" text-anchor="middle" font-family="monospace">실시간 반복</text>`;
+  document.getElementById('s3').innerHTML=S.svg({W,H},s,'루프');
+  document.getElementById('lab3').innerHTML=`<b style="color:var(--q)">추정</b> → <b style="color:var(--good)">계획</b> → <b style="color:var(--v)">제어</b> → 다시 추정… 이 고리가 끊임없이 돌아요. 우리가 본 건 가운데 "계획" 조각.`;
+})();
+</script>
+</body>
+</html>
