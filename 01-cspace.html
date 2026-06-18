@@ -122,7 +122,7 @@ let rr=0.6;
   function render(){ document.getElementById('rrv').textContent=fmt(rr,2);
     // 실제: 원반 + 원래 장애물
     let a=OBS.map(o=>rectSVG(ba,o,'rgba(123,156,255,.12)','var(--q)','stroke-width="1.5"')).join('');
-    const rpos=[3.9,6.6]; a+=`<circle cx="${ba.X(rpos[0])}" cy="${ba.Y(rpos[1])}" r="${rr*ba.s}" fill="rgba(110,231,183,.16)" stroke="var(--good)" stroke-width="2"/><circle cx="${ba.X(rpos[0])}" cy="${ba.Y(rpos[1])}" r="3" fill="var(--good)"/>`;
+    const rpos=[4.5,3.5]; a+=`<circle cx="${ba.X(rpos[0])}" cy="${ba.Y(rpos[1])}" r="${rr*ba.s}" fill="rgba(110,231,183,.16)" stroke="var(--good)" stroke-width="2"/><circle cx="${ba.X(rpos[0])}" cy="${ba.Y(rpos[1])}" r="3" fill="var(--good)"/>`;
     document.getElementById('s1a').innerHTML=S.svg(ba,a,'원반 r='+fmt(rr,2));
     // C-space: 부푼 장애물(라운드 외곽) + 점
     let c=OBS.map(o=>`<rect x="${bb.X(o.x-rr)}" y="${bb.Y(o.y+o.h+rr)}" width="${(o.w+2*rr)*bb.s}" height="${(o.h+2*rr)*bb.s}" rx="${rr*bb.s}" fill="rgba(251,191,36,.13)" stroke="var(--hot)" stroke-width="1.5" stroke-dasharray="4 4"/>`).join('');
@@ -130,7 +130,7 @@ let rr=0.6;
     c+=`<circle cx="${bb.X(rpos[0])}" cy="${bb.Y(rpos[1])}" r="4" fill="var(--good)"/>`;
     document.getElementById('s1b').innerHTML=S.svg(bb,c,'점 + 부푼 장애물');
     const gap=OBS[1].x-(OBS[0].x+OBS[0].w); // 틈 간격
-    document.getElementById('lab1').innerHTML=`틈 간격 ${fmt(gap,1)} · 로봇 지름 ${fmt(rr*2,2)} → ${rr*2<=gap+1e-9?`<b style="color:var(--good)">통과 가능</b> (부푼 두 영역이 안 겹침)`:`<b style="color:var(--k)">통과 불가</b> (부푼 영역이 틈을 막음)`}`; }
+    document.getElementById('lab1').innerHTML=`틈 간격 ${fmt(gap,1)} · 로봇 지름 ${fmt(rr*2,2)} → ${rr*2<gap-1e-9?`<b style="color:var(--good)">통과 가능</b> (부푼 두 영역 사이가 트임)`:rr*2>gap+1e-9?`<b style="color:var(--k)">통과 불가</b> (부푼 영역이 틈을 막음)`:`<b style="color:var(--hot)">딱 맞음</b> (부푼 두 영역이 스침 — 아슬아슬)`}`; }
   document.getElementById('rr').addEventListener('input',e=>{ rr=+e.target.value; render(); }); render();
 })();
 

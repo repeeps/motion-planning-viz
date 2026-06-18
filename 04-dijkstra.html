@@ -35,7 +35,7 @@
   <section class="panel show" data-panel="0">
     <span class="kicker" style="color:var(--hot)">Step 00 — Not All Ground Is Equal</span>
     <h2>진흙 1칸 = 평지 여러 칸</h2>
-    <p class="lead">땅에 색을 입혔어요. <span style="color:var(--q)">옅은 칸</span>은 평지(비용 1), <span style="color:var(--hot)">짙은 칸</span>은 진흙(비용 높음). 진흙을 가로지르면 칸 수는 적어도 <b>실제로 더 비싸요</b>. 슬라이더로 진흙 비용을 올리면, "칸 수"와 "실제 비용"이 점점 어긋나는 게 보여요.</p>
+    <p class="lead">땅에 색을 입혔어요. <span style="color:var(--q)">옅은 칸</span>은 평지(비용 1), <span style="color:var(--hot)">짙은 칸</span>은 진흙(비용 높음). 진흙을 가로지르면 칸 수는 적어도 <b>실제로 더 비싸요</b>. 슬라이더로 진흙 비용을 올리면, 칸 수는 그대로여도 <b>실제 비용이 점점 커지는</b> 게 보여요 — 그래서 "칸 수가 적은 길"이 더는 "가장 싼 길"이 아니게 돼요.</p>
     <div class="ctl"><label style="font-size:13px;color:var(--muted);min-width:90px">진흙 비용</label><input type="range" id="mc0" min="1" max="9" step="1" value="5" style="flex:1"><span class="big" id="mc0v" style="min-width:80px"></span></div>
     <div class="scene" id="s0"></div>
     <p class="big" id="lab0"></p>
@@ -118,7 +118,7 @@ function mudSVG(b){ let s=''; for(let y=0;y<GR;y++)for(let x=0;x<GC;x++) if(isMu
     document.getElementById('s0').innerHTML=S.svg({W:b.W,H:b.H},s,'땅 비용');
     // 직선(가로지르기) 비용 vs 칸 수
     const straight=[]; for(let x=ST[0];x<=GO[0];x++) straight.push([x,5]);
-    document.getElementById('lab0').innerHTML=`출발→목표 직진은 ${straight.length}칸 · 하지만 진흙(×${mc})을 가로질러 실제 비용 <b style="color:var(--hot)">${pathCost(g,straight)}</b>. 칸 수↔비용이 ${mc>1?'<b>어긋나요</b>':'<b>같아요</b>'}.`; }
+    document.getElementById('lab0').innerHTML=`출발→목표 직진은 ${straight.length}칸 · 하지만 진흙(×${mc})을 가로질러 실제 비용 <b style="color:var(--hot)">${pathCost(g,straight)}</b>. 직진 비용이 칸 수(${straight.length})보다 ${mc>1?'<b>커졌어요</b>':'<b>같아요</b>'}.`; }
   document.getElementById('mc0').addEventListener('input',e=>{mc=+e.target.value; render();}); render();
 })();
 

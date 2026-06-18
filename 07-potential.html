@@ -45,7 +45,7 @@
   <section class="panel" data-panel="1">
     <span class="kicker" style="color:var(--q)">Step 01 — Roll Downhill</span>
     <h2>공을 놓으면 경사를 따라 구른다</h2>
-    <p class="lead"><b>굴리기</b>를 누르면 <span style="color:var(--good)">공</span>이 힘을 따라 이동해요 — 목표에 끌리면서 장애물은 비껴서요. <b>출발점을 끌어</b> 여기저기서 굴려보세요. 대부분 매끄럽게 목표에 닿아요. (공을 장애물 <b>정중앙 뒤쪽 일직선</b>에 두면 좌우 힘이 상쇄돼 멈칫할 수도 있어요 — 다음 스텝의 예고편이에요.)</p>
+    <p class="lead"><b>굴리기</b>를 누르면 <span style="color:var(--good)">공</span>이 힘을 따라 이동해요 — 목표에 끌리면서 장애물은 비껴서요. <b>출발점을 끌어</b> 여기저기서 굴려보세요. 대부분 매끄럽게 목표에 닿아요. (공을 장애물 <b>정중앙 뒤쪽 일직선</b>에 두면 좌우 힘이 상쇄돼 <b>아예 멈춰버릴 수도</b> 있어요 — 다음 스텝의 예고편이에요.)</p>
     <div class="row" style="margin:8px 0"><button class="btn play" id="go1">⚽ 굴리기</button> <button class="btn" id="rst1">↺ 리셋</button></div>
     <div class="scene" id="s1"></div>
     <p class="big" id="lab1"></p>
@@ -56,7 +56,7 @@
   <section class="panel" data-panel="2">
     <span class="kicker" style="color:var(--v)">Step 02 — Trapped in a Local Minimum</span>
     <h2>오목한 곳에 갇히면 — 못 나온다</h2>
-    <p class="lead">장애물이 <b>오목하게(ㄷ자)</b> 놓이면 함정이 생겨요. 공이 안으로 굴러 들어가면, 한가운데에서 <b>당기는 힘(목표)과 밀어내는 힘(장애물)이 거의 상쇄</b>돼 더 나아갈 힘이 없어져요 — <b>웅덩이의 바닥</b>이죠. 목표가 코앞에 보여도 <b>꼼짝 못 해요</b>. <b>굴리기</b>로 직접 갇혀보세요.</p>
+    <p class="lead">장애물이 <b>오목하게(ㄷ자)</b> 놓이면 함정이 생겨요. 공이 오목한 입구 쪽으로 다가가면, 밀어내는 힘(장애물)과 당기는 힘(목표)이 <b>정면으로 맞서는 지점</b>에서 거의 상쇄돼 더 나아갈 힘이 없어져요 — <b>웅덩이의 바닥</b>이죠. 목표가 건너편에 빤히 보여도 <b>꼼짝 못 해요</b>. <b>굴리기</b>로 직접 갇혀보세요.</p>
     <div class="row" style="margin:8px 0"><button class="btn play" id="go2">⚽ 굴리기</button> <button class="btn" id="rst2">↺ 리셋</button></div>
     <div class="scene" id="s2"></div>
     <p class="big" id="lab2"></p>
@@ -144,7 +144,7 @@ const CUP=[{x:5.4,y:4,r:0.6},{x:5.0,y:3.0,r:0.6},{x:5.0,y:5.0,r:0.6},{x:4.5,y:2.
     if(result===false&&stuck) s+=`<text x="${b.X(stuck[0])}" y="${b.Y(stuck[1])-13}" fill="var(--hot)" font-size="12" text-anchor="middle" font-family="monospace">갇힘!</text>`;
     document.getElementById('s2').innerHTML=S.svg(b,s,'지역 최소');
     document.getElementById('lab2').innerHTML= result==null?(path?'구르는 중…':'"굴리기"를 눌러보세요. 목표가 ㄷ자 뒤에 있어요.')
-      : result?'목표에 닿았어요 — 출발 위치를 바꾸면 갇히기도 해요.':`<b style="color:var(--hot)">갇혔어요!</b> 목표(x=9)가 코앞인데, 당기는 힘과 밀어내는 힘이 거의 상쇄돼 <b>더 나아가지 못하는 웅덩이 바닥</b>에 멈췄어요. 하지만 위/아래로 <b>돌아가는 길은 분명히 있죠</b>.`; }
+      : result?'목표에 닿았어요 — 출발 위치를 바꾸면 갇히기도 해요.':`<b style="color:var(--hot)">갇혔어요!</b> 목표(x=9)가 건너편에 빤히 보이는데, 당기는 힘과 밀어내는 힘이 거의 상쇄돼 <b>더 나아가지 못하는 웅덩이 바닥</b>에 멈췄어요. 하지만 위/아래로 <b>돌아가는 길은 분명히 있죠</b>.`; }
   function play(){ if(timer)clearInterval(timer); result=null; stuck=null; path=[[...start]];
     timer=descend(start,CUP,(pp)=>{path=pp;render();},(ok,pp,p)=>{path=pp;result=ok;stuck=p;render();}); render(); }
   document.getElementById('go2').onclick=play;

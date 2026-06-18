@@ -72,7 +72,7 @@
   <section class="panel" data-panel="3">
     <span class="kicker" style="color:var(--good)">Step 03 — Tune Speed vs Optimality</span>
     <h2>가중치 w로 빠름↔최적 사이를 조절</h2>
-    <p class="lead">어림 h에 <b>가중치 w</b>를 곱해보세요(같은 함정 미로). <b>w=1이면 보통 A*</b> — 가장 적게 보면서도 최단. w를 키울수록 <b>탐욕에 가까워져</b> 대체로 더 빨리(적게 탐색) 끝나지만 경로가 <b>길어질 위험</b>이 커져요. <b>w를 끝까지</b> 올리면 사실상 탐욕(앞 스텝)과 같아져요.</p>
+    <p class="lead">어림 h에 <b>가중치 w</b>를 곱해보세요(같은 함정 미로). <b>w=1이면 보통 A*</b> — 가장 적게 보면서도 최단. w를 키울수록 <b>탐욕에 가까워져</b> 대체로 더 빨리(적게 탐색) 끝나지만 경로가 <b>길어질 위험</b>이 커져요. <b>w를 끝까지</b> 올리면 경로가 사실상 탐욕(앞 스텝)처럼 나빠져요.</p>
     <div class="ctl"><label style="font-size:13px;color:var(--muted);min-width:90px">가중치 w</label><input type="range" id="w3" min="1" max="8" step="0.5" value="1" style="flex:1"><span class="big" id="w3v" style="min-width:48px"></span></div>
     <div class="scene" id="s3"></div>
     <p class="big" id="lab3"></p>

@@ -47,7 +47,7 @@
     <span class="kicker" style="color:var(--q)">Step 01 — Discretize into Cells</span>
     <h2>공간을 격자로 쪼갠다</h2>
     <p class="lead">공간 위에 <b>격자</b>를 덮어요. 장애물에 걸리는 칸은 <span style="color:var(--k)">막힘(빨강)</span>, 나머지는 <span style="color:var(--q)">자유 칸</span>. 슬라이더로 <b>칸 크기</b>를 바꿔보세요 — 칸이 잘면 장애물을 정밀하게 따라가지만 칸 수가 늘고, 굵으면 거칠지만 가벼워요.</p>
-    <div class="ctl"><label>격자 해상도</label><input type="range" id="res" min="6" max="20" step="1" value="12"><span class="big" id="resv" style="min-width:64px"></span></div>
+    <div class="ctl"><label>격자 해상도</label><input type="range" id="res" min="6" max="20" step="1" value="11"><span class="big" id="resv" style="min-width:64px"></span></div>
     <div class="scene" id="s1"></div>
     <p class="big" id="lab1"></p>
     <p class="note" style="margin-top:6px">→ 연속 공간이 <b>유한 개의 자유 칸</b>으로 바뀌었어요. 이제 셀 수 있죠.</p>
@@ -109,7 +109,7 @@ function cellBlocked(cols,rows,x,y){ for(let sx=0.15;sx<=0.85;sx+=0.35)for(let s
 })();
 
 // ===== STEP 1: discretize =====
-let res=12;
+let res=11;
 (function(){
   function render(){ document.getElementById('resv').textContent=res+'×'+Math.round(res*0.72);
     const cols=res, rows=Math.round(res*0.72), cs=Math.min(330/cols,238/rows), b=gridBoard(cols,rows,cs);
