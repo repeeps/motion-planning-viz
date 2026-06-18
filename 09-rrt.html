@@ -71,7 +71,7 @@
   <section class="panel" data-panel="3">
     <span class="kicker" style="color:var(--good)">Step 03 — Fast but Jagged</span>
     <h2>길은 찾지만 — 들쭉날쭉, 최단은 아니다</h2>
-    <p class="lead">RRT가 찾은 경로(초록)는 <b>무작위 가지를 이어붙인 것</b>이라 <b>지그재그로 구불구불</b>해요. 분명 목표엔 닿지만, <span style="color:var(--muted)">곧게 편 길(회색 점선)</span>보다 한참 길죠. "<b>길을 빨리 찾는다</b>"와 "<b>가장 짧은 길</b>"은 다른 얘기예요 — RRT는 앞엣것만 보장해요.</p>
+    <p class="lead">RRT가 찾은 경로(초록)는 <b>무작위 가지를 이어붙인 것</b>이라 <b>지그재그로 구불구불</b>해요. 분명 목표엔 닿지만, <span style="color:var(--muted)">곧은 직선(장애물 무시한 기준선, 회색 점선)</span>보다 한참 길죠. "<b>길을 빨리 찾는다</b>"와 "<b>가장 짧은 길</b>"은 다른 얘기예요 — RRT는 앞엣것만 보장해요.</p>
     <div class="row" style="margin:8px 0"><button class="btn play" id="go3">🌳 키워서 비교</button> <button class="btn" id="rst3">↺ 리셋</button></div>
     <div class="scene" id="s3"></div>
     <p class="big" id="lab3"></p>
@@ -161,7 +161,7 @@ function ends(b){ return `<circle cx="${b.X(START[0])}" cy="${b.Y(START[1])}" r=
     s+=ends(b);
     document.getElementById('s3').innerHTML=S.svg(b,s,'들쭉날쭉');
     if(T.done){ const L=P.pathLen(path); const straight=Math.hypot(GOAL[0]-START[0],GOAL[1]-START[1]);
-      document.getElementById('lab3').innerHTML=`RRT 경로 <b style="color:var(--good)">${fmt(L,1)}</b> vs 곧은 직선 <b style="color:var(--muted)">${fmt(straight,1)}</b> → <b>${((L/straight-1)*100).toFixed(0)}%</b> 더 길어요(게다가 구불구불).`; }
+      document.getElementById('lab3').innerHTML=`RRT 경로 <b style="color:var(--good)">${fmt(L,1)}</b> vs 곧은 직선(장애물 무시 기준) <b style="color:var(--muted)">${fmt(straight,1)}</b> → <b>${((L/straight-1)*100).toFixed(0)}%</b> 더 길어요(게다가 구불구불).`; }
     else document.getElementById('lab3').innerHTML= timer?`자라는 중… 가지 ${T.nodes.length-1}개`:'"키워서 비교"를 눌러 RRT 경로와 직선을 견줘보세요.'; }
   function play(){ if(timer)clearInterval(timer); timer=setInterval(()=>{ for(let k=0;k<3;k++)rrtStep(T); render(); if(T.done){clearInterval(timer);timer=null;} },40); }
   document.getElementById('go3').onclick=()=>{ if(!T||T.done)reset(); play(); };

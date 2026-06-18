@@ -59,7 +59,7 @@
   <section class="panel" data-panel="2">
     <span class="kicker" style="color:var(--v)">Step 02 — Shorter with More Samples</span>
     <h2>점이 늘수록 길이가 줄어든다</h2>
-    <p class="lead"><b>점 추가</b>를 누르며 점을 부어보세요. 처음 찾은 경로도 RRT보다 낫지만, 점이 쌓일수록 재배선이 누적돼 경로가 <b>꾸준히 짧아져요</b>. 아래 막대는 현재 경로 길이고, <span style="color:var(--good)">곧은 최단 거리</span>에 점점 다가가요.</p>
+    <p class="lead"><b>점 추가</b>를 누르며 점을 부어보세요. 처음 찾은 경로도 RRT보다 낫지만, 점이 쌓일수록 재배선이 누적돼 경로가 <b>꾸준히 짧아져요</b>. 아래 막대는 현재 경로 길이고, <span style="color:var(--good)">곧은 직선 기준선(장애물 무시한 하한)</span>에 점점 다가가요(장애물을 살짝 비껴가야 하니 그 하한 바로 위에서 멈춰요).</p>
     <div class="row" style="margin:8px 0"><button class="btn play" id="go2">＋ 점 200개 더</button> <button class="btn" id="rst2">↺ 리셋</button></div>
     <div class="scene" id="s2"></div>
     <div id="bar2" style="margin:10px 0"></div>
@@ -125,7 +125,7 @@ const STRAIGHT=Math.hypot(GOAL[0]-START[0],GOAL[1]-START[1]);
   function reset(){ if(timer){clearInterval(timer);timer=null;} T=makeTree(123,0.6,0,false); render(); }
   function render(){ let s=obsSVG(b)+treeSVG(b,T.nodes); const path=pathTo(T.nodes,T.gi); if(path)s+=pathSVG(b,path,'var(--good)',4); s+=ends(b);
     document.getElementById('s0').innerHTML=S.svg(b,s,'RRT');
-    document.getElementById('lab0').innerHTML= T.gi>=0?`RRT 경로 길이 <b style="color:var(--good)">${fmt(P.pathLen(path),1)}</b> (곧은 최단 ${fmt(STRAIGHT,1)}보다 길고 구불구불).`:(timer?`자라는 중… 가지 ${T.nodes.length-1}개`:'"키우기"로 RRT를 자라게 하세요.'); }
+    document.getElementById('lab0').innerHTML= T.gi>=0?`RRT 경로 길이 <b style="color:var(--good)">${fmt(P.pathLen(path),1)}</b> (곧은 직선 기준 ${fmt(STRAIGHT,1)}보다 길고 구불구불).`:(timer?`자라는 중… 가지 ${T.nodes.length-1}개`:'"키우기"로 RRT를 자라게 하세요.'); }
   function play(){ if(timer)clearInterval(timer); timer=setInterval(()=>{ for(let k=0;k<3;k++)grow(T); render(); if(T.gi>=0){clearInterval(timer);timer=null;} },40); }
   document.getElementById('go0').onclick=()=>{ if(!T||T.gi>=0)reset(); play(); };
   document.getElementById('rst0').onclick=reset; reset();
@@ -158,13 +158,13 @@ const STRAIGHT=Math.hypot(GOAL[0]-START[0],GOAL[1]-START[1]);
     let bar='';
     if(cur){ const over=(cur/STRAIGHT-1)*100;
       bar=VZ.barRow?'':''; // fallback
-      bar=`<div style="font-size:12px;color:var(--muted);font-family:monospace;margin-bottom:4px">경로 길이 ${fmt(cur,2)} · 최단 ${fmt(STRAIGHT,2)} · +${over.toFixed(0)}%</div>
+      bar=`<div style="font-size:12px;color:var(--muted);font-family:monospace;margin-bottom:4px">경로 길이 ${fmt(cur,2)} · 직선 하한 ${fmt(STRAIGHT,2)} · +${over.toFixed(0)}%</div>
         <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:8px;height:18px;position:relative;overflow:hidden">
           <div style="position:absolute;left:0;top:0;bottom:0;width:${(STRAIGHT/cur*100).toFixed(1)}%;background:var(--good);opacity:.5"></div>
           <div style="position:absolute;left:${(STRAIGHT/cur*100).toFixed(1)}%;top:0;bottom:0;border-left:2px dashed var(--hot)"></div>
         </div>`; }
     document.getElementById('bar2').innerHTML=bar;
-    document.getElementById('lab2').innerHTML= !T||T.nodes.length<=1?'"점 추가"로 점을 부어보세요.':(T.gi<0?`아직 목표 못 찾음 — 가지 ${T.nodes.length-1}개`:`점 ${T.nodes.length}개 · 경로 길이 <b style="color:var(--good)">${fmt(cur,2)}</b> (최단 ${fmt(STRAIGHT,2)})${history.length>1?` · 직전보다 ${history[history.length-2]>cur?'<b style="color:var(--good)">짧아짐 ↓</b>':'유지'}`:''}`); }
+    document.getElementById('lab2').innerHTML= !T||T.nodes.length<=1?'"점 추가"로 점을 부어보세요.':(T.gi<0?`아직 목표 못 찾음 — 가지 ${T.nodes.length-1}개`:`점 ${T.nodes.length}개 · 경로 길이 <b style="color:var(--good)">${fmt(cur,2)}</b> (직선 하한 ${fmt(STRAIGHT,2)})${history.length>1?` · 직전보다 ${history[history.length-2]>cur?'<b style="color:var(--good)">짧아짐 ↓</b>':'유지'}`:''}`); }
   function add(){ for(let k=0;k<200;k++)grow(T); const path=pathTo(T.nodes,T.gi); if(path)history.push(P.pathLen(path)); render(); }
   document.getElementById('go2').onclick=add;
   document.getElementById('rst2').onclick=reset; reset();
@@ -178,7 +178,7 @@ const STRAIGHT=Math.hypot(GOAL[0]-START[0],GOAL[1]-START[1]);
   s+=pathSVG(b,[START,GOAL],'var(--muted)',2,'6 4'); s+=ends(b);
   document.getElementById('s3').innerHTML=S.svg(b,s,'점근적 최적');
   const L=path?P.pathLen(path):0;
-  document.getElementById('lab3').innerHTML=`점 ${T.nodes.length}개에서 RRT* 경로 <b style="color:var(--good)">${fmt(L,2)}</b> ≈ 최단 <b>${fmt(STRAIGHT,2)}</b> — 거의 곧게 수렴했어요. 👍 점근적 최적 · 👎 한 점당 계산이 RRT보다 많음.`;
+  document.getElementById('lab3').innerHTML=`점 ${T.nodes.length}개에서 RRT* 경로 <b style="color:var(--good)">${fmt(L,2)}</b> ≈ 직선 하한 <b>${fmt(STRAIGHT,2)}</b> — 장애물을 살짝 비껴간 진짜 최단으로 거의 곧게 수렴했어요. 👍 점근적 최적 · 👎 한 점당 계산이 RRT보다 많음.`;
 })();
 </script>
 </body>
