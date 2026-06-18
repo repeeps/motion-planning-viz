@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11 · 경로 다듬기 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .leg{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0;}
+  .leg i{display:inline-block; width:14px; height:3px; vertical-align:3px; margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 5 · 실전 · CH 11</div>
+    <h1>경로 다듬기 — 지름길로 펴기</h1>
+    <p class="intro">격자는 계단처럼 각지고, RRT는 무작위로 구불거려요. 어느 쪽이든 <b>찾아낸 길은 거칠죠</b>. 다행히 펴는 건 간단해요 — 경로 위 <b>두 점을 직선으로 이어봤을 때 장애물에 안 걸리면, 그 사이 구불거림을 통째로 잘라내</b> 지름길로 바꿔요. 이걸 여러 번 반복하면 울퉁불퉁하던 길이 <b>팽팽하게 당겨진 끈</b>처럼 짧고 곧아져요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 거친 원본 경로</button>
+    <button data-s="1">01 · 지름길로 자른다</button>
+    <button data-s="2">02 · 펴기 전후</button>
+    <button data-s="3">03 · 아직 각은 남는다</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — A Rough Path</span>
+    <h2>방금 찾은 길은 — 거칠다</h2>
+    <p class="lead">앞 챕터의 RRT가 막 찾아낸 경로예요. 목표엔 닿지만 <b>꼭짓점이 잔뜩</b>이고 이리저리 꺾이죠. 로봇이 이대로 따라가면 <b>비효율적이고 덜컹거려요</b>. 이 경로를 매끄럽게 펴는 게 이번 목표예요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 핵심 관찰: 멀리 떨어진 두 점 사이가 <b>뻥 뚫려 있다면</b>, 그 사이를 빙 도는 건 낭비예요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Cut the Shortcut</span>
+    <h2>두 점을 직선으로 — 안 걸리면 자른다</h2>
+    <p class="lead"><b>한 번 다듬기</b>를 누르면, 경로에서 두 점을 골라 <b>직선으로 이어봐요</b>. 그 직선이 <span style="color:var(--good)">장애물에 안 걸리면(통과 가능)</span> 사이의 꼭짓점들을 <b>잘라내</b> 지름길로 바꿔요. 걸리면 그냥 두고요. 누를 때마다 점이 줄고 길이 짧아져요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="one1">✂ 한 번 다듬기</button> <button class="btn play" id="auto1">⏩ 끝까지</button> <button class="btn" id="rst1">↺ 리셋</button></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ "직선이 비어 있으면 가로지른다" — 이 단순 규칙의 반복이 다듬기(shortcut)예요. 충돌 검사만 할 줄 알면 끝.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Before & After</span>
+    <h2>팽팽하게 당겨진 끈처럼</h2>
+    <p class="lead">원본(거친)과 다듬은 경로를 겹쳐 봐요. 다듬은 길은 <b>꼭짓점이 확 줄고</b>, 장애물 둘레를 <b>바짝 붙어 돌아</b> 짧아졌어요 — 마치 두 끝을 잡고 <b>끈을 팽팽히 당긴</b> 모습이죠. 충돌은 여전히 <b>전혀 없고요</b>.</p>
+    <div class="leg"><span><i style="background:var(--muted)"></i>원본(거침)</span><span><i style="background:var(--good)"></i>다듬은 경로</span></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 계산이 싸고(충돌 검사뿐) 효과가 커서, 거의 모든 플래너 뒤에 <b>마무리 단계</b>로 붙어요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Corners Remain</span>
+    <h2>그래도 — 꺾이는 모서리는 남는다</h2>
+    <p class="lead">지름길로 펴도 결과는 여전히 <b>직선 토막을 이은 것</b>이라, 꼭짓점에서 <b>뾰족하게 꺾여요</b>. 실제 차·드론은 그 자리에서 <b>순간적으로 방향을 못 바꿔요</b>(속도가 있으니까). 그래서 모서리를 <b>부드러운 곡선</b>으로 마저 다듬고, <b>속도까지</b> 입히는 단계가 필요해요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 모서리를 곡선으로, 시간·속도까지 함께 — 다음 → <a href="12-trajectory.html" style="color:var(--q);font-weight:700">CH 12 · 궤적 최적화</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 경로 생성·다듬기 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '11 · 경로 다듬기');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+function board(){ return S.board({W:440,H:300,s:44,ox:14,oy:286}); }
+function mulberry(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const XMAX=9.7,YMAX=6.4, START=[0.6,5.7], GOAL=[9.1,0.7];
+const OBS=[{x:3.4,y:3.4,r:1.2},{x:6.4,y:2.6,r:1.2}];
+const free=p=>!P.ptHit(p,OBS), edgeFree=(a,b)=>!P.segHit(a,b,OBS);
+function obsSVG(b){ return OBS.map(o=>`<circle cx="${b.X(o.x)}" cy="${b.Y(o.y)}" r="${o.r*b.s}" fill="rgba(251,113,133,.15)" stroke="var(--hot)" stroke-width="1.3"/>`).join(''); }
+function ends(b){ return `<circle cx="${b.X(START[0])}" cy="${b.Y(START[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/><circle cx="${b.X(GOAL[0])}" cy="${b.Y(GOAL[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`; }
+function pathSVG(b,path,c,w,dash,dots){ let d=''; path.forEach((p,i)=>d+=(i?'L':'M')+b.X(p[0]).toFixed(1)+' '+b.Y(p[1]).toFixed(1)+' ');
+  let s=`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w||3}" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round" stroke-linecap="round"/>`;
+  if(dots) path.forEach(p=>s+=`<circle cx="${b.X(p[0])}" cy="${b.Y(p[1])}" r="3" fill="${c}"/>`); return s; }
+// RRT로 거친 경로 생성 (seed3)
+function rrtJagged(){ const nodes=[{x:START[0],y:START[1],p:-1}]; const rng=mulberry(3);
+  for(let it=0;it<3000;it++){ const samp=rng()<0.1?[GOAL[0],GOAL[1]]:[rng()*XMAX,rng()*YMAX];
+    let bi=0,bd=Infinity; for(let i=0;i<nodes.length;i++){ const d=Math.hypot(nodes[i].x-samp[0],nodes[i].y-samp[1]); if(d<bd){bd=d;bi=i;} }
+    const near=nodes[bi],nw=P.steer([near.x,near.y],samp,0.8); if(!free(nw)||!edgeFree([near.x,near.y],nw))continue; nodes.push({x:nw[0],y:nw[1],p:bi});
+    if(Math.hypot(nw[0]-GOAL[0],nw[1]-GOAL[1])<=0.8&&edgeFree(nw,GOAL)){ nodes.push({x:GOAL[0],y:GOAL[1],p:nodes.length-1});
+      let c=nodes.length-1,path=[]; while(c>=0){ path.unshift([nodes[c].x,nodes[c].y]); c=nodes[c].p; } return path; } }
+  return [START,GOAL]; }
+const JAG = rrtJagged();
+// 한 번의 shortcut 시도(결정적): k번째 시도에서 가운데 한 점 제거 시도
+function shortcutOnce(path,k){ if(path.length<=2) return {path, changed:false};
+  const i=1+Math.floor((path.length-2)*((k*0.6180339887)%1));
+  if(i>0&&i<path.length-1&&edgeFree(path[i-1],path[i+1])){ const np=path.slice(); np.splice(i,1); return {path:np, changed:true}; }
+  return {path, changed:false}; }
+
+// ===== STEP 0: jagged =====
+(function(){ const b=board(); let s=obsSVG(b)+pathSVG(b,JAG,'var(--good)',3,null,true)+ends(b);
+  document.getElementById('s0').innerHTML=S.svg(b,s,'거친 경로');
+  document.getElementById('lab0').innerHTML=`RRT 경로 — 꼭짓점 ${JAG.length}개, 길이 <b style="color:var(--good)">${fmt(P.pathLen(JAG),1)}</b>. 곳곳이 불필요하게 꺾여요.`;
+})();
+
+// ===== STEP 1: shortcut step by step =====
+(function(){ const b=board(); let path=JAG.slice(), k=0, tries=0, timer=null;
+  function render(hl){ let s=obsSVG(b)+pathSVG(b,JAG,'var(--line)',2,'4 4')+pathSVG(b,path,'var(--good)',3.5,null,true);
+    if(hl) s+=`<line x1="${b.X(hl[0][0])}" y1="${b.Y(hl[0][1])}" x2="${b.X(hl[1][0])}" y2="${b.Y(hl[1][1])}" stroke="var(--q)" stroke-width="2.5" stroke-dasharray="3 3"/>`;
+    s+=ends(b);
+    document.getElementById('s1').innerHTML=S.svg(b,s,'다듬는 중');
+    document.getElementById('lab1').innerHTML=`꼭짓점 <b style="color:var(--good)">${path.length}</b>개 · 길이 <b style="color:var(--good)">${fmt(P.pathLen(path),1)}</b> (원본 ${fmt(P.pathLen(JAG),1)}). 다듬기 시도 ${tries}회.`; }
+  function one(){ tries++; const r=shortcutOnce(path,k); k++; path=r.path; render(); }
+  function auto(){ if(timer)clearInterval(timer); timer=setInterval(()=>{ tries++; const before=path.length; const r=shortcutOnce(path,k); k++; path=r.path; render(); if(path.length<=2||tries>120){clearInterval(timer);timer=null;} },120); }
+  document.getElementById('one1').onclick=one;
+  document.getElementById('auto1').onclick=auto;
+  document.getElementById('rst1').onclick=()=>{ if(timer)clearInterval(timer); path=JAG.slice(); k=0; tries=0; render(); };
+  render();
+})();
+
+// ===== STEP 2: before/after =====
+const SMOOTH = P.shortcut(JAG, edgeFree, 120);
+(function(){ const b=board(); let s=obsSVG(b)+pathSVG(b,JAG,'var(--muted)',2.5,'5 4',true)+pathSVG(b,SMOOTH,'var(--good)',4,null,true)+ends(b);
+  document.getElementById('s2').innerHTML=S.svg(b,s,'전 vs 후');
+  const r=(1-P.pathLen(SMOOTH)/P.pathLen(JAG))*100;
+  document.getElementById('lab2').innerHTML=`원본 ${JAG.length}점/${fmt(P.pathLen(JAG),1)} → 다듬음 <b style="color:var(--good)">${SMOOTH.length}점/${fmt(P.pathLen(SMOOTH),1)}</b> · 길이 <b>${r.toFixed(0)}%</b> 단축, 충돌 0.`;
+})();
+
+// ===== STEP 3: corners remain =====
+(function(){ const b=board();
+  let s=obsSVG(b)+pathSVG(b,SMOOTH,'var(--good)',3.5,null,true);
+  // 꼭짓점(중간점)을 강조 — 뾰족한 모서리
+  for(let i=1;i<SMOOTH.length-1;i++) s+=`<circle cx="${b.X(SMOOTH[i][0])}" cy="${b.Y(SMOOTH[i][1])}" r="7" fill="none" stroke="var(--hot)" stroke-width="2"/>`;
+  // 곡선으로 부드럽게(참고) — 같은 점들을 곡선 보간
+  let cd=''; for(let i=0;i<SMOOTH.length;i++){ const p=SMOOTH[i]; if(i===0)cd+=`M${b.X(p[0])} ${b.Y(p[1])} `; else { const pr=SMOOTH[i-1]; const mx=(pr[0]+p[0])/2,my=(pr[1]+p[1])/2; cd+=`Q ${b.X(pr[0])} ${b.Y(pr[1])} ${b.X(mx)} ${b.Y(my)} `; } }
+  cd+=`L ${b.X(SMOOTH[SMOOTH.length-1][0])} ${b.Y(SMOOTH[SMOOTH.length-1][1])}`;
+  s+=`<path d="${cd}" fill="none" stroke="var(--v)" stroke-width="2" stroke-dasharray="5 4" opacity=".8"/>`;
+  s+=ends(b);
+  document.getElementById('s3').innerHTML=S.svg(b,s,'남은 모서리');
+  document.getElementById('lab3').innerHTML=`<span style="color:var(--hot)">○ 표시</span>가 뾰족한 모서리 — 여기서 방향이 꺾여요. <span style="color:var(--v)">보라 점선</span>처럼 곡선으로 펴고 속도를 입히면? 다음 챕터로.`;
+})();
+</script>
+</body>
+</html>

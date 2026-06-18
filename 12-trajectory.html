@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12 · 궤적 최적화 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--muted); min-width:96px;}
+  .ctl input[type=range]{flex:1; min-width:140px;}
+  .leg{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0;}
+  .leg i{display:inline-block; width:14px; height:3px; vertical-align:3px; margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 5 · 실전 · CH 12</div>
+    <h1>궤적 최적화 — 경로에 "시간"을 입힌다</h1>
+    <p class="intro">지금까지의 결과는 <b>지나갈 점들의 줄("경로")</b>일 뿐, <b>언제 어떤 속도로</b> 지날지는 빠져 있었어요. 실제 로봇엔 관성이 있어 <b>뾰족한 모서리에서 순간 방향 전환이 불가능</b>하죠. 그래서 모서리를 <b>고무줄처럼 당겨 부드러운 곡선</b>으로 펴고, <b>급한 굽이에선 천천히·곧은 길에선 빠르게</b> 속도를 배분해요. 이렇게 "경로 + 시간(속도)"을 함께 빚은 게 <b>궤적</b>이에요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 모서리에선 못 돈다</button>
+    <button data-s="1">01 · 고무줄처럼 편다</button>
+    <button data-s="2">02 · 굽이는 느리게</button>
+    <button data-s="3">03 · 경로 + 시간 = 궤적</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — Can't Turn on a Dime</span>
+    <h2>뾰족한 모서리 = 순간 정지가 필요</h2>
+    <p class="lead">다듬은 경로에도 <b>꺾이는 모서리</b>가 남아 있어요. <b>출발</b>을 누르면 점이 일정 속도로 경로를 따라가요. 모서리에 닿는 순간 방향을 <b>홱</b> 꺾어야 하는데 — 속도가 있으면 이건 <b>급정거 후 재출발</b>이나 마찬가지예요. 덜컹거리고 비효율적이죠.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go0">▶ 따라가기</button> <button class="btn" id="rst0">↺ 리셋</button></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 부드럽게 가려면 모서리를 <b>완만한 곡선</b>으로 바꿔야 해요. 어떻게? 경로를 <b>고무줄</b>이라 생각해요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Pull It Like an Elastic Band</span>
+    <h2>이웃끼리 당기고, 장애물은 밀어낸다</h2>
+    <p class="lead">경로 위 점들을 <b>고무줄에 꿴 구슬</b>처럼 다뤄요. 각 점은 <b>① 양 옆 이웃의 가운데로 당겨지고</b>(고무줄이 팽팽해지며 펴짐), <b>② 가까운 장애물에선 밀려나요</b>(부딪히지 않게). <b>당기기</b>를 누르면 뾰족하던 모서리가 점점 <b>매끄러운 곡선</b>으로 풀려요.</p>
+    <div class="ctl"><label>장애물 여유</label><input type="range" id="clr" min="0" max="0.9" step="0.1" value="0.5"><span class="big" id="clrv" style="min-width:40px"></span></div>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go1">🪢 당기기</button> <button class="btn" id="rst1">↺ 리셋</button></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 단순한 "당기고-밀기"의 반복인데, 결과는 장애물을 적당히 비껴가는 <b>부드러운 곡선</b>이에요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Slow in the Curves</span>
+    <h2>급한 굽이는 느리게, 곧은 길은 빠르게</h2>
+    <p class="lead">이제 <b>속도</b>를 입혀요. 급하게 굽는 곳을 빠르게 돌면 <b>바깥으로 미끄러져요</b>(원심력). 그래서 <b>많이 굽는 구간일수록 느리게</b>, 곧게 뻗은 구간은 빠르게 달려요. 색이 <span style="color:rgb(40,90,230)">파랑이면 빠름</span>, <span style="color:rgb(255,90,0)">주황이면 느림</span>. <b>출발</b>로 속도 변화를 직접 보세요.</p>
+    <div class="leg"><span><i style="background:rgb(40,90,230)"></i>빠름(곧은 길)</span><span><i style="background:rgb(255,90,0)"></i>느림(급한 굽이)</span></div>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go2">▶ 속도대로 달리기</button> <button class="btn" id="rst2">↺ 리셋</button></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 같은 길이라도 <b>속도 배분</b>에 따라 부드럽기·빠르기가 달라져요. 그 배분을 찾는 게 궤적 최적화의 핵심.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Path + Time = Trajectory</span>
+    <h2>경로에 시간을 더하면 "궤적"</h2>
+    <p class="lead">정리하면 — <b>경로</b>는 "어디를 지날까"(공간)이고, <b>궤적</b>은 거기에 "<b>언제·얼마 속도로</b>"(시간)를 더한 거예요. 부드럽게 펴고(곡선), 굽이에서 늦추는(속도) 두 가지를 함께 풀면, 로봇이 <b>실제로 따라갈 수 있는 매끄러운 움직임</b>이 나와요. <b>거친 경로</b>와 <b>완성된 궤적</b>을 나란히 보세요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 그런데 지금은 "어느 방향으로든 즉시 움직일 수 있다"고 가정했어요. 진짜 자동차는 <b>옆으로 못 가고 제자리 회전도 안 돼요</b>. 다음 → <a href="13-carlike.html" style="color:var(--q);font-weight:700">CH 13 · 차처럼 움직이기</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 곡선·속도 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '12 · 궤적 최적화');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+function board(){ return S.board({W:440,H:300,s:44,ox:14,oy:286}); }
+const OBS=[{x:4.6,y:3.0,r:1.3}];
+function obsSVG(b){ return OBS.map(o=>`<circle cx="${b.X(o.x)}" cy="${b.Y(o.y)}" r="${o.r*b.s}" fill="rgba(251,113,133,.15)" stroke="var(--hot)" stroke-width="1.3"/>`).join(''); }
+const START=[0.6,3.2], GOAL=[9.0,3.2];
+function resample(poly,step){ const out=[poly[0].slice()]; for(let i=1;i<poly.length;i++){ const a=poly[i-1],b=poly[i]; const d=Math.hypot(b[0]-a[0],b[1]-a[1]); const n=Math.max(1,Math.round(d/step)); for(let k=1;k<=n;k++) out.push([a[0]+(b[0]-a[0])*k/n, a[1]+(b[1]-a[1])*k/n]); } return out; }
+const CORNER=[[0.6,3.2],[4.6,5.7],[9.0,3.2]]; // 장애물 위로 ㄱ자 모서리
+const INIT = resample(CORNER,0.25);
+function pathSVG(b,path,c,w,dash){ let d=''; path.forEach((p,i)=>d+=(i?'L':'M')+b.X(p[0]).toFixed(1)+' '+b.Y(p[1]).toFixed(1)+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w||3}" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round" stroke-linecap="round"/>`; }
+function ends(b){ return `<circle cx="${b.X(START[0])}" cy="${b.Y(START[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/><circle cx="${b.X(GOAL[0])}" cy="${b.Y(GOAL[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`; }
+// 탄성밴드 1회 완화
+function relaxOnce(band,clr){ const nb=band.map(p=>p.slice());
+  for(let i=1;i<band.length-1;i++){ const a=band[i-1],c=band[i],b=band[i+1];
+    const sx=(a[0]+b[0])/2-c[0], sy=(a[1]+b[1])/2-c[1];
+    let cfx=0,cfy=0; for(const o of OBS){ const dx=c[0]-o.x,dy=c[1]-o.y; const d=Math.hypot(dx,dy); const margin=o.r+clr; if(d<margin&&d>1e-3){ const m=(margin-d)/margin; cfx+=dx/d*m; cfy+=dy/d*m; } }
+    nb[i]=[c[0]+0.3*sx+0.3*cfx, c[1]+0.3*sy+0.3*cfy]; }
+  return nb; }
+// 곡률 기반 속도(0..1, 1=빠름): 이웃 각도 클수록 느림
+function speeds(band){ const sp=band.map(()=>1);
+  for(let i=1;i<band.length-1;i++){ const a=band[i-1],c=band[i],b=band[i+1];
+    const v1=[c[0]-a[0],c[1]-a[1]],v2=[b[0]-c[0],b[1]-c[1]];
+    const ang=Math.abs(Math.atan2(v1[0]*v2[1]-v1[1]*v2[0], v1[0]*v2[0]+v1[1]*v2[1]));
+    sp[i]=Math.max(0.18, 1-ang/0.6); }
+  // 평활(앞뒤 전파)
+  for(let r=0;r<3;r++)for(let i=1;i<sp.length-1;i++) sp[i]=Math.min(sp[i],(sp[i-1]+sp[i+1])/2+0.05);
+  return sp; }
+function speedPathSVG(b,band,sp){ let s=''; for(let i=1;i<band.length;i++){ const t=(sp[i]+sp[i-1])/2; const c=P.heatColor(t);
+  s+=`<line x1="${b.X(band[i-1][0])}" y1="${b.Y(band[i-1][1])}" x2="${b.X(band[i][0])}" y2="${b.Y(band[i][1])}" stroke="${c}" stroke-width="5" stroke-linecap="round"/>`; } return s; }
+
+// ===== STEP 0: follow sharp corner =====
+(function(){ const b=board(); let t=0,timer=null;
+  function render(){ let s=obsSVG(b)+pathSVG(b,INIT,'var(--good)',3);
+    const idx=Math.min(INIT.length-1,Math.floor(t)); const p=INIT[idx];
+    // 모서리 근처면 경고
+    const nearCorner=Math.abs(idx-Math.floor(INIT.length/2))<3;
+    s+=`<circle cx="${b.X(p[0])}" cy="${b.Y(p[1])}" r="7" fill="${nearCorner&&timer?'var(--hot)':'var(--good)'}" stroke="#fff" stroke-width="1.5"/>`;
+    s+=ends(b);
+    document.getElementById('s0').innerHTML=S.svg(b,s,'모서리 통과');
+    document.getElementById('lab0').innerHTML= timer? (nearCorner?`<b style="color:var(--hot)">모서리!</b> 방향을 홱 꺾어야 해요 — 실제론 여기서 급정거가 필요.`:'일정 속도로 가는 중…') : (t>=INIT.length-1?'도착. 모서리에서 방향이 급격히 꺾였죠 — 부드럽지 않아요.':'"따라가기"로 점이 경로를 따라가게 하세요.'); }
+  function play(){ if(timer)clearInterval(timer); t=0; timer=setInterval(()=>{ t+=1.2; if(t>=INIT.length-1){t=INIT.length-1;clearInterval(timer);timer=null;} render(); },24); }
+  document.getElementById('go0').onclick=play;
+  document.getElementById('rst0').onclick=()=>{ if(timer)clearInterval(timer); timer=null; t=0; render(); }; render();
+})();
+
+// ===== STEP 1: elastic band =====
+(function(){ const b=board(); let band=INIT.map(p=>p.slice()),timer=null,clr=0.5,iters=0;
+  function render(){ document.getElementById('clrv').textContent=fmt(clr,1);
+    let s=obsSVG(b)+pathSVG(b,INIT,'var(--line)',2,'4 4')+pathSVG(b,band,'var(--good)',3.5)+ends(b);
+    document.getElementById('s1').innerHTML=S.svg(b,s,'고무줄');
+    document.getElementById('lab1').innerHTML= iters===0?'"당기기"로 모서리를 곡선으로 풀어보세요.':`완화 ${iters}회 · 길이 ${fmt(P.pathLen(band),1)} · 충돌 ${band.some(p=>P.ptHit(p,OBS))?'<b style="color:var(--k)">있음</b>':'<b style="color:var(--good)">없음</b>'}`; }
+  function play(){ if(timer)clearInterval(timer); timer=setInterval(()=>{ band=relaxOnce(band,clr); iters++; render(); if(iters>=120){clearInterval(timer);timer=null;} },28); }
+  document.getElementById('go1').onclick=play;
+  document.getElementById('rst1').onclick=()=>{ if(timer)clearInterval(timer); timer=null; band=INIT.map(p=>p.slice()); iters=0; render(); };
+  document.getElementById('clr').addEventListener('input',e=>{ clr=+e.target.value; if(timer)clearInterval(timer); timer=null; band=INIT.map(p=>p.slice()); iters=0; render(); });
+  render();
+})();
+
+// 완화 완료된 매끈한 밴드(공용)
+function relaxed(clr){ let band=INIT.map(p=>p.slice()); for(let k=0;k<120;k++) band=relaxOnce(band,clr); return band; }
+const SMOOTH = relaxed(0.5);
+const SP = speeds(SMOOTH);
+
+// ===== STEP 2: velocity profile =====
+(function(){ const b=board(); let t=0,timer=null;
+  // 누적 호길이로 속도대로 진행
+  function render(){ let s=obsSVG(b)+speedPathSVG(b,SMOOTH,SP);
+    const idx=Math.min(SMOOTH.length-1,Math.floor(t)); const p=SMOOTH[idx];
+    s+=`<circle cx="${b.X(p[0])}" cy="${b.Y(p[1])}" r="7" fill="var(--ink)" stroke="#fff" stroke-width="1.5"/>`;
+    s+=ends(b);
+    document.getElementById('s2').innerHTML=S.svg(b,s,'속도 배분');
+    const v=SP[idx];
+    document.getElementById('lab2').innerHTML= timer?`현재 속도 <b style="color:${P.heatColor(v)}">${v>0.6?'빠름':v>0.35?'중간':'느림'}</b> — 굽이에선 저절로 느려져요.`:(t>=SMOOTH.length-1?'도착. 굽이에서 느리고 곧은 데서 빨랐죠.':'"달리기"로 속도 변화를 보세요(곧은 데 빠름·굽이 느림).'); }
+  function play(){ if(timer)clearInterval(timer); t=0; timer=setInterval(()=>{ const idx=Math.min(SMOOTH.length-1,Math.floor(t)); t+=0.6+2.2*SP[idx]; if(t>=SMOOTH.length-1){t=SMOOTH.length-1;clearInterval(timer);timer=null;} render(); },28); }
+  document.getElementById('go2').onclick=play;
+  document.getElementById('rst2').onclick=()=>{ if(timer)clearInterval(timer); timer=null; t=0; render(); }; render();
+})();
+
+// ===== STEP 3: path vs trajectory =====
+(function(){ const b=board();
+  let s=obsSVG(b)+pathSVG(b,INIT,'var(--muted)',2.5,'5 4')+speedPathSVG(b,SMOOTH,SP)+ends(b);
+  document.getElementById('s3').innerHTML=S.svg(b,s,'경로 → 궤적');
+  document.getElementById('lab3').innerHTML=`<span style="color:var(--muted)">거친 경로(점선)</span> → <b>완성 궤적</b>: 부드러운 곡선 + 속도 배분(색). 길이 ${fmt(P.pathLen(INIT),1)} → ${fmt(P.pathLen(SMOOTH),1)}, 충돌 0.`;
+})();
+</script>
+</body>
+</html>
