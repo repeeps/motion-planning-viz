@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08 · PRM — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--muted); min-width:96px;}
+  .ctl input[type=range]{flex:1; min-width:140px;}
+  .leg{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0;}
+  .leg i{display:inline-block; width:12px; height:12px; border-radius:50%; vertical-align:-1px; margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 4 · 샘플링 기반 · CH 08</div>
+    <h1>PRM — 점을 뿌려 "길 그물"을 짠다</h1>
+    <p class="intro">격자처럼 공간을 빼곡히 채우는 대신, <b>빈 곳에 점을 무작위로 흩뿌려요</b>. 그리고 가까운 점끼리 <b>부딪히지 않으면 선으로 잇죠</b>. 이렇게 만든 <b>"길 그물(로드맵)"</b> 위에서는, 어떤 출발·목표가 와도 그래프 탐색(A*)으로 길을 찾을 수 있어요. 한 번 짜두면 <b>여러 번 재사용</b>하는 게 핵심 — 그래서 지도가 잘 안 바뀌는 환경에 딱이에요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 점을 흩뿌린다</button>
+    <button data-s="1">01 · 가까운 점을 잇는다</button>
+    <button data-s="2">02 · 그물 위에서 길찾기</button>
+    <button data-s="3">03 · 재사용과 약점</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — Scatter Milestones</span>
+    <h2>빈 공간에 점을 무작위로 뿌린다</h2>
+    <p class="lead">먼저 자유 공간(장애물 밖)에 <span style="color:var(--q)">점(이정표)</span>을 무작위로 뿌려요. 장애물 안에 떨어진 점은 버려요. <b>점 추가</b>를 누를 때마다 점이 늘어나요 — 아직은 그냥 흩어진 점들이지만, 곧 이들을 이어 길을 만들 거예요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="add0">＋ 점 추가</button> <button class="btn" id="rst0">↺ 리셋</button></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 칸을 다 만들지 않아요. 자유 공간을 <b>"대표점 몇 개"</b>로 듬성듬성 요약하는 거예요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Connect the Dots</span>
+    <h2>가까운 점끼리, 부딪히지 않으면 잇는다</h2>
+    <p class="lead">두 점이 <b>충분히 가깝고</b>, 둘을 잇는 직선이 <b>장애물을 지나지 않으면</b> 선으로 이어요(장애물을 통과하는 선은 버려요). 점 수를 늘릴수록 <b>그물이 촘촘</b>해져요. 이게 완성된 <b>로드맵</b> — 출발·목표가 정해지기 <b>전에</b> 미리 짜둬요.</p>
+    <div class="ctl"><label>점 개수</label><input type="range" id="n1" min="10" max="120" step="5" value="50"><span class="big" id="n1v" style="min-width:48px"></span></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 선 하나하나가 "여기서 저기로 부딪힘 없이 갈 수 있다"는 보장이에요. 그래서 그물 위 어떤 경로든 안전하죠.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Search on the Web</span>
+    <h2>그물에 출발·목표를 붙이고 길을 찾는다</h2>
+    <p class="lead">이제 <span style="color:var(--good)">출발</span>과 <span style="color:var(--hot)">목표</span>를 로드맵의 가까운 점에 연결만 하면 — 나머지는 <b>그래프 탐색(A*)</b>이 해줘요. <b>목표를 끌어</b> 옮겨보세요. 같은 그물 위에서 <b>출발·목표만 바꿔</b> 몇 번이고 다시 길을 찾을 수 있어요(그물은 그대로!).</p>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 그물을 짜는 건 한 번, 쓰는 건 여러 번 — 이걸 <b>"멀티 쿼리"</b>라고 해요. 격자 탐색과 달리 비싼 준비를 여러 질문이 나눠 갖죠.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Reuse & Weakness</span>
+    <h2>장점은 재사용, 약점은 좁은 길목</h2>
+    <p class="lead">PRM은 <b>지도가 고정</b>이고 <b>질문이 여러 번</b>일 때 강해요(창고 로봇처럼). 하지만 약점도 분명해요 — <b>좁은 통로</b>는 점이 잘 안 떨어져서 그물이 <b>끊기기</b> 쉬워요. 아래 좁은 길목에서 점을 늘려보면, 한참 늘려야 겨우 통로에 점이 들어가 연결되는 게 보여요.</p>
+    <div class="ctl"><label>점 개수</label><input type="range" id="n3" min="20" max="300" step="10" value="20"><span class="big" id="n3v" style="min-width:48px"></span></div>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ "미리 그물 짜기"가 부담일 때, 혹은 질문이 한 번뿐일 때는? 출발점에서 <b>나무를 키워</b> 단번에 뻗어가는 방법이 있어요. 다음 → <a href="09-rrt.html" style="color:var(--q);font-weight:700">CH 09 · RRT</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 샘플·로드맵·경로 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '08 · PRM');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt, clamp=VZ.clamp;
+function board(){ return S.board({W:440,H:300,s:44,ox:14,oy:286}); } // x:0..9.7, y:0..6.4
+// 시드 난수(결정적)
+function mulberry(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function obsSVG(b,obs){ return obs.map(o=>`<circle cx="${b.X(o.x)}" cy="${b.Y(o.y)}" r="${o.r*b.s}" fill="rgba(251,113,133,.15)" stroke="var(--hot)" stroke-width="1.3"/>`).join(''); }
+const free=(p,obs)=>!P.ptHit(p,obs);
+const edgeFree=(a,b,obs)=>!P.segHit(a,b,obs);
+// N개 자유 표본 (결정적)
+function sample(n,obs,rng,xmax,ymax){ const pts=[]; let tries=0; while(pts.length<n&&tries<n*40){ tries++;
+  const p=[rng()*xmax, rng()*ymax]; if(free(p,obs)) pts.push(p); } return pts; }
+// 로드맵: 노드 pts, 반경 R 이내 + 충돌없는 쌍 연결
+function roadmap(pts,obs,R){ const edges=[]; const adj=pts.map(()=>[]);
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){ const d=Math.hypot(pts[i][0]-pts[j][0],pts[i][1]-pts[j][1]);
+    if(d<=R&&edgeFree(pts[i],pts[j],obs)){ edges.push([i,j]); adj[i].push([j,d]); adj[j].push([i,d]); } }
+  return {edges,adj}; }
+// 로드맵 위 다익스트라 (노드 인덱스)
+function roadSearch(pts,adj,si,gi){ const dist=Array(pts.length).fill(Infinity); const prev=Array(pts.length).fill(-1);
+  dist[si]=0; const seen=Array(pts.length).fill(false);
+  for(let it=0;it<pts.length;it++){ let u=-1,bv=Infinity; for(let i=0;i<pts.length;i++) if(!seen[i]&&dist[i]<bv){bv=dist[i];u=i;}
+    if(u<0)break; seen[u]=true; if(u===gi)break;
+    for(const[v,w] of adj[u]) if(dist[u]+w<dist[v]){ dist[v]=dist[u]+w; prev[v]=u; } }
+  if(dist[gi]===Infinity)return null; let path=[],c=gi; while(c>=0){ path.unshift(pts[c]); c=prev[c]; } return {path,cost:dist[gi]}; }
+function edgesSVG(b,pts,edges,c,w,op){ return edges.map(([i,j])=>`<line x1="${b.X(pts[i][0])}" y1="${b.Y(pts[i][1])}" x2="${b.X(pts[j][0])}" y2="${b.Y(pts[j][1])}" stroke="${c}" stroke-width="${w}" opacity="${op}"/>`).join(''); }
+function nodesSVG(b,pts,c,r){ return pts.map(p=>`<circle cx="${b.X(p[0])}" cy="${b.Y(p[1])}" r="${r||3}" fill="${c}"/>`).join(''); }
+function pathSVG(b,path,c){ let d=''; path.forEach((p,i)=>d+=(i?'L':'M')+b.X(p[0]).toFixed(1)+' '+b.Y(p[1]).toFixed(1)+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`; }
+const OBS=[{x:3,y:2,r:1.0},{x:6.2,y:4.3,r:1.1},{x:7.4,y:1.4,r:0.8},{x:2.4,y:4.8,r:0.8}];
+
+// ===== STEP 0: scatter =====
+(function(){ const b=board(); let n=0; const rng=mulberry(7);
+  function render(){ const pts=sample(n,OBS,mulberry(7),9.7,6.4);
+    let s=obsSVG(b,OBS)+nodesSVG(b,pts,'var(--q)',3.2);
+    document.getElementById('s0').innerHTML=S.svg(b,s,'이정표');
+    document.getElementById('lab0').innerHTML= n===0?'"점 추가"를 눌러 자유 공간에 이정표를 뿌려보세요.':`이정표 ${pts.length}개 (장애물에 떨어진 점은 버려졌어요).`; }
+  document.getElementById('add0').onclick=()=>{ n=Math.min(n+8,80); render(); };
+  document.getElementById('rst0').onclick=()=>{ n=0; render(); }; render();
+})();
+
+// ===== STEP 1: connect =====
+(function(){ const b=board(); let n=50;
+  function render(){ document.getElementById('n1v').textContent=n;
+    const pts=sample(n,OBS,mulberry(13),9.7,6.4); const rm=roadmap(pts,OBS,2.3);
+    let s=obsSVG(b,OBS)+edgesSVG(b,pts,rm.edges,'var(--q)',1,0.45)+nodesSVG(b,pts,'var(--q)',2.6);
+    document.getElementById('s1').innerHTML=S.svg(b,s,'로드맵');
+    document.getElementById('lab1').innerHTML=`이정표 ${pts.length}개 · 안전한 연결선 <b style="color:var(--q)">${rm.edges.length}</b>개. 점이 많을수록 그물이 촘촘해져요.`; }
+  document.getElementById('n1').addEventListener('input',e=>{n=+e.target.value; render();}); render();
+})();
+
+// ===== STEP 2: query =====
+(function(){ const b=board(); const pts=sample(70,OBS,mulberry(21),9.7,6.4); const rm=roadmap(pts,OBS,2.3);
+  const START=[0.6,5.8]; let goal=[9.1,0.7];
+  function connect(q){ // q를 가장 가까운 충돌없는 노드들에 임시 연결, 노드 인덱스 반환(배열 확장)
+    let bi=-1,bd=Infinity; for(let i=0;i<pts.length;i++){ const d=Math.hypot(pts[i][0]-q[0],pts[i][1]-q[1]); if(d<bd&&edgeFree(q,pts[i],OBS)){bd=d;bi=i;} } return bi; }
+  function render(){ // 임시 노드 추가
+    const allPts=pts.concat([START,goal]); const si=pts.length, gi=pts.length+1;
+    const adj=rm.adj.map(a=>a.slice()); adj.push([]); adj.push([]);
+    [si,gi].forEach(idx=>{ const q=allPts[idx]; for(let i=0;i<pts.length;i++){ const d=Math.hypot(pts[i][0]-q[0],pts[i][1]-q[1]); if(d<=2.6&&edgeFree(q,pts[i],OBS)){ adj[idx].push([i,d]); adj[i].push([idx,d]); } } });
+    const res=roadSearch(allPts,adj,si,gi);
+    let s=obsSVG(b,OBS)+edgesSVG(b,pts,rm.edges,'var(--q)',1,0.3)+nodesSVG(b,pts,'rgba(123,156,255,.7)',2.4);
+    if(res) s+=pathSVG(b,res.path,'var(--good)');
+    s+=`<circle cx="${b.X(START[0])}" cy="${b.Y(START[1])}" r="7" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    s+=`<circle cx="${b.X(goal[0])}" cy="${b.Y(goal[1])}" r="7" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s2').innerHTML=S.svg(b,s,'쿼리');
+    document.getElementById('lab2').innerHTML= res?`그물 위에서 길 발견 — 길이 <b style="color:var(--good)">${fmt(P.pathLen(res.path),1)}</b>. 목표를 끌면 같은 그물로 다시 풀어요.`:`이 목표로는 그물이 안 닿아요 — 목표를 다른 곳으로 끌어보세요.`; }
+  const el=document.getElementById('s2'); let drag=false;
+  function px(e){ const sv=el.querySelector('svg'); if(!sv)return null; const r=sv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*b.W/b.s-b.ox/b.s, -((e.clientY-r.top)/r.height*b.H-b.oy)/b.s]; }
+  function set(e){ const p=px(e); if(p){ const q=[clamp(p[0],0.3,9.4),clamp(p[1],0.3,6.1)]; if(free(q,OBS)){goal=q; render();} } }
+  el.addEventListener('pointerdown',e=>{drag=true;set(e);}); el.addEventListener('pointermove',e=>{if(drag)set(e);});
+  const up=()=>drag=false; el.addEventListener('pointerup',up); el.addEventListener('pointerleave',up); render();
+})();
+
+// ===== STEP 3: narrow passage weakness =====
+(function(){ const b=board(); let n=60;
+  // 좁은 통로: 두 큰 벽(원) 사이 간격 좁음
+  const NOBS=[{x:4.85,y:1.4,r:1.6},{x:4.85,y:5.0,r:1.6}]; // 가운데 좁은 틈(폭 0.4)
+  const START=[0.7,3.2], GOAL=[9.0,3.2];
+  function render(){ document.getElementById('n3v').textContent=n;
+    const pts=sample(n,NOBS,mulberry(99),9.7,6.4); const rm=roadmap(pts,NOBS,2.0);
+    const allPts=pts.concat([START,GOAL]); const si=pts.length,gi=pts.length+1;
+    const adj=rm.adj.map(a=>a.slice()); adj.push([]); adj.push([]);
+    [si,gi].forEach(idx=>{ const q=allPts[idx]; for(let i=0;i<pts.length;i++){ const d=Math.hypot(pts[i][0]-q[0],pts[i][1]-q[1]); if(d<=2.2&&edgeFree(q,pts[i],NOBS)){ adj[idx].push([i,d]); adj[i].push([idx,d]); } } });
+    const res=roadSearch(allPts,adj,si,gi);
+    let s=obsSVG(b,NOBS)+edgesSVG(b,pts,rm.edges,'var(--q)',1,0.4)+nodesSVG(b,pts,'rgba(123,156,255,.7)',2.4);
+    if(res) s+=pathSVG(b,res.path,'var(--good)');
+    s+=`<circle cx="${b.X(START[0])}" cy="${b.Y(START[1])}" r="7" fill="var(--good)" stroke="#fff" stroke-width="1.5"/><circle cx="${b.X(GOAL[0])}" cy="${b.Y(GOAL[1])}" r="7" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s3').innerHTML=S.svg(b,s,'좁은 길목');
+    document.getElementById('lab3').innerHTML= res?`점 ${pts.length}개 → 통로에 점이 들어가 <b style="color:var(--good)">연결 성공</b>(길이 ${fmt(P.pathLen(res.path),1)}).`:`점 ${pts.length}개 → 좁은 틈에 점이 안 떨어져 <b style="color:var(--k)">그물이 끊김</b>. 점을 더 늘려보세요.`; }
+  document.getElementById('n3').addEventListener('input',e=>{n=+e.target.value; render();}); render();
+})();
+</script>
+</body>
+</html>

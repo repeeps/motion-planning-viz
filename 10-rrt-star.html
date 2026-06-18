@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 · RRT* — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:14px;} @media(max-width:680px){.two{grid-template-columns:1fr;}}
+  .two .cap{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:center; margin:0 0 4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 4 · 샘플링 기반 · CH 10</div>
+    <h1>RRT* — 점점 짧아지는 길</h1>
+    <p class="intro">RRT의 약점은 <b>한 번 정한 부모 가지를 다시 안 본다</b>는 거였어요 — 그래서 길이 구불구불했죠. RRT*는 두 가지를 더해요. ① 새 가지를 붙일 때 주변에서 <b>가장 싸게 도달하는 부모</b>를 고르고, ② 새 가지 덕분에 <b>주변 가지들이 더 싸지면 부모를 갈아끼워요(재배선)</b>. 이 작은 정리정돈이 쌓이면, 점이 늘수록 경로가 <b>점점 최단에 수렴</b>해요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 왜 구불거렸나</button>
+    <button data-s="1">01 · 더 나은 부모로 갈아끼운다</button>
+    <button data-s="2">02 · 점이 늘수록 짧아진다</button>
+    <button data-s="3">03 · 점근적 최적</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — Why So Jagged</span>
+    <h2>부모를 한 번 정하면 다신 안 봤다</h2>
+    <p class="lead">RRT에서 각 가지의 부모는 "<b>그때 가장 가까웠던 가지</b>"로 한 번 정해지고 <b>끝</b>이었어요. 나중에 더 곧고 짧은 연결이 생겨도 무시했죠. 그래서 출발→목표 경로(초록)가 <b>이리저리 꺾여요</b>. <b>키우기</b>로 그 구불거림을 다시 확인해요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go0">🌳 RRT 키우기</button> <button class="btn" id="rst0">↺ 리셋</button></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 문제는 "다시 보지 않는다"는 것. 그렇다면 — <b>새 가지가 생길 때마다 주변을 다시 보면</b> 되지 않을까요?</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Rewire to a Better Parent</span>
+    <h2>새 가지를 붙일 때 주변을 다시 정돈한다</h2>
+    <p class="lead">RRT*는 새 가지를 추가할 때 두 가지를 해요. <b>① 최적 부모</b>: 주변 가지들 중 <b>출발에서 가장 싸게 닿는</b> 가지를 부모로 골라요. <b>② 재배선</b>: 거꾸로, 새 가지를 거치면 <b>더 싸지는 이웃</b>이 있으면 그 이웃의 부모를 새 가지로 <b>갈아끼워요</b>. 같은 씨앗으로 RRT와 RRT*를 나란히 키워 비교해요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go1">🌿 나란히 키우기</button> <button class="btn" id="rst1">↺ 리셋</button></div>
+    <div class="two">
+      <div><p class="cap">RRT (정돈 없음)</p><div class="scene" id="s1a"></div></div>
+      <div><p class="cap">RRT* (최적부모+재배선)</p><div class="scene" id="s1b"></div></div>
+    </div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ RRT* 나무는 가지들이 <b>출발 쪽으로 곧게 정돈</b>돼 있어요. 경로도 훨씬 반듯하죠.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Shorter with More Samples</span>
+    <h2>점이 늘수록 길이가 줄어든다</h2>
+    <p class="lead"><b>점 추가</b>를 누르며 점을 부어보세요. 처음 찾은 경로도 RRT보다 낫지만, 점이 쌓일수록 재배선이 누적돼 경로가 <b>꾸준히 짧아져요</b>. 아래 막대는 현재 경로 길이고, <span style="color:var(--good)">곧은 최단 거리</span>에 점점 다가가요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go2">＋ 점 200개 더</button> <button class="btn" id="rst2">↺ 리셋</button></div>
+    <div class="scene" id="s2"></div>
+    <div id="bar2" style="margin:10px 0"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 줄어드는 폭은 점점 작아지지만, <b>최단을 향해 계속 가까워져요</b>. 멈추지 않고 부으면 이론상 최단에 닿죠.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Asymptotically Optimal</span>
+    <h2>"점근적 최적" — 무한히 부으면 최단</h2>
+    <p class="lead">RRT*의 보장은 이거예요 — <b>점을 무한히 뿌리면 경로가 진짜 최단에 수렴</b>한다(이를 "점근적 최적"이라 해요). RRT는 빨리 <b>아무 길</b>이나 찾고 끝, RRT*는 <b>계속 다듬으며 최단에 다가가요</b>. 대신 매 점마다 주변을 정돈하니 <b>한 점당 계산이 더 들죠</b>. "빠른 한 방(RRT)"이냐 "꾸준한 개선(RRT*)"이냐의 선택이에요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 이제 길은 찾았어요. 그런데 격자든 샘플링이든 경로는 여전히 좀 거칠죠. 이걸 <b>매끄럽게 펴는</b> 마무리가 남았어요. 다음 → <a href="11-smoothing.html" style="color:var(--q);font-weight:700">CH 11 · 경로 다듬기</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 나무·재배선·경로 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '10 · RRT*');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+function board(){ return S.board({W:440,H:300,s:44,ox:14,oy:286}); }
+function boardSm(){ return S.board({W:300,H:230,s:30,ox:10,oy:220}); }
+function mulberry(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const XMAX=9.7,YMAX=6.4;
+const OBS=[{x:3.2,y:2.0,r:1.1},{x:6.0,y:4.4,r:1.2},{x:6.6,y:1.3,r:0.85}];
+const free=p=>!P.ptHit(p,OBS), edgeFree=(a,b)=>!P.segHit(a,b,OBS);
+const START=[0.7,5.7], GOAL=[9.0,0.8];
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function obsSVG(b){ return OBS.map(o=>`<circle cx="${b.X(o.x)}" cy="${b.Y(o.y)}" r="${o.r*b.s}" fill="rgba(251,113,133,.15)" stroke="var(--hot)" stroke-width="1.3"/>`).join(''); }
+function ends(b){ return `<circle cx="${b.X(START[0])}" cy="${b.Y(START[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/><circle cx="${b.X(GOAL[0])}" cy="${b.Y(GOAL[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`; }
+function treeSVG(b,nodes){ let s=''; for(let i=1;i<nodes.length;i++){ const n=nodes[i]; if(n.p<0)continue; const pa=nodes[n.p];
+  s+=`<line x1="${b.X(pa.x)}" y1="${b.Y(pa.y)}" x2="${b.X(n.x)}" y2="${b.Y(n.y)}" stroke="var(--q)" stroke-width="1" opacity=".55"/>`; } return s; }
+function pathTo(nodes,gi){ if(gi<0)return null; let c=gi,path=[]; let guard=0; while(c>=0&&guard++<9999){ path.unshift([nodes[c].x,nodes[c].y]); c=nodes[c].p; } return path; }
+function pathSVG(b,path,c,w,dash){ let d=''; path.forEach((p,i)=>d+=(i?'L':'M')+b.X(p[0]).toFixed(1)+' '+b.Y(p[1]).toFixed(1)+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w||4}" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round" stroke-linecap="round"/>`; }
+
+// 트리 엔진: plain RRT 또는 RRT*(star=true)
+function makeTree(seed,stepLen,rad,star){ return {nodes:[{x:START[0],y:START[1],p:-1,c:0}], rng:mulberry(seed), stepLen, rad, star, gi:-1}; }
+function grow(T){ const r=T.rng; const samp = r()<0.1? {x:GOAL[0],y:GOAL[1]} : {x:r()*XMAX, y:r()*YMAX};
+  let bi=0,bd=Infinity; for(let i=0;i<T.nodes.length;i++){ const d=dist(T.nodes[i],samp); if(d<bd){bd=d;bi=i;} }
+  const near=T.nodes[bi]; const nwA=P.steer([near.x,near.y],[samp.x,samp.y],T.stepLen); const nw={x:nwA[0],y:nwA[1]};
+  if(!free(nwA)||!edgeFree([near.x,near.y],nwA)) return;
+  if(!T.star){ const ni=T.nodes.length; T.nodes.push({x:nw.x,y:nw.y,p:bi,c:near.c+dist(near,nw)});
+    if(dist(nw,{x:GOAL[0],y:GOAL[1]})<=T.stepLen && edgeFree(nwA,GOAL) && T.gi<0){ T.nodes.push({x:GOAL[0],y:GOAL[1],p:ni,c:0}); T.gi=T.nodes.length-1; } return; }
+  // RRT*
+  const nbrs=[]; for(let i=0;i<T.nodes.length;i++) if(dist(T.nodes[i],nw)<=T.rad && edgeFree([T.nodes[i].x,T.nodes[i].y],nwA)) nbrs.push(i);
+  if(nbrs.indexOf(bi)<0) nbrs.push(bi);
+  let bp=bi,bc=near.c+dist(near,nw); for(const i of nbrs){ const c=T.nodes[i].c+dist(T.nodes[i],nw); if(c<bc){bc=c;bp=i;} }
+  const ni=T.nodes.length; T.nodes.push({x:nw.x,y:nw.y,p:bp,c:bc});
+  for(const i of nbrs){ if(i===bp)continue; const c=bc+dist(nw,T.nodes[i]); if(c<T.nodes[i].c && edgeFree([nw.x,nw.y],[T.nodes[i].x,T.nodes[i].y])){ T.nodes[i].p=ni; T.nodes[i].c=c; propagate(T,i); } }
+  if(dist(nw,{x:GOAL[0],y:GOAL[1]})<=T.stepLen && edgeFree(nwA,GOAL)){ const gc=bc+dist(nw,{x:GOAL[0],y:GOAL[1]});
+    if(T.gi<0){ T.nodes.push({x:GOAL[0],y:GOAL[1],p:ni,c:gc}); T.gi=T.nodes.length-1; }
+    else if(gc<T.nodes[T.gi].c){ T.nodes[T.gi].p=ni; T.nodes[T.gi].c=gc; } } }
+function propagate(T,i){ const st=[i]; let g=0; while(st.length&&g++<9999){ const u=st.pop(); for(let k=0;k<T.nodes.length;k++) if(T.nodes[k].p===u){ T.nodes[k].c=T.nodes[u].c+dist(T.nodes[u],T.nodes[k]); st.push(k); } } }
+const STRAIGHT=Math.hypot(GOAL[0]-START[0],GOAL[1]-START[1]);
+
+// ===== STEP 0: plain RRT jagged =====
+(function(){ const b=board(); let T,timer=null;
+  function reset(){ if(timer){clearInterval(timer);timer=null;} T=makeTree(123,0.6,0,false); render(); }
+  function render(){ let s=obsSVG(b)+treeSVG(b,T.nodes); const path=pathTo(T.nodes,T.gi); if(path)s+=pathSVG(b,path,'var(--good)',4); s+=ends(b);
+    document.getElementById('s0').innerHTML=S.svg(b,s,'RRT');
+    document.getElementById('lab0').innerHTML= T.gi>=0?`RRT 경로 길이 <b style="color:var(--good)">${fmt(P.pathLen(path),1)}</b> (곧은 최단 ${fmt(STRAIGHT,1)}보다 길고 구불구불).`:(timer?`자라는 중… 가지 ${T.nodes.length-1}개`:'"키우기"로 RRT를 자라게 하세요.'); }
+  function play(){ if(timer)clearInterval(timer); timer=setInterval(()=>{ for(let k=0;k<3;k++)grow(T); render(); if(T.gi>=0){clearInterval(timer);timer=null;} },40); }
+  document.getElementById('go0').onclick=()=>{ if(!T||T.gi>=0)reset(); play(); };
+  document.getElementById('rst0').onclick=reset; reset();
+})();
+
+// ===== STEP 1: side-by-side RRT vs RRT* =====
+(function(){ const ba=boardSm(), bb=boardSm(); let TA,TB,timer=null;
+  function reset(){ if(timer){clearInterval(timer);timer=null;} TA=makeTree(7,0.6,0,false); TB=makeTree(7,0.6,1.4,true); render(); }
+  function panel(elid,b,T,star){ let s=obsSVG(b)+treeSVG(b,T.nodes); const path=pathTo(T.nodes,T.gi); if(path)s+=pathSVG(b,path,'var(--good)',3.5); s+=ends(b);
+    document.getElementById(elid).innerHTML=S.svg(b,s,star?'RRT*':'RRT'); }
+  function render(){ panel('s1a',ba,TA,false); panel('s1b',bb,TB,true);
+    const pa=pathTo(TA.nodes,TA.gi), pb=pathTo(TB.nodes,TB.gi);
+    document.getElementById('lab1').innerHTML= (TA.gi>=0&&TB.gi>=0)
+      ? `RRT 경로 <b style="color:var(--muted)">${fmt(P.pathLen(pa),1)}</b> vs RRT* 경로 <b style="color:var(--good)">${fmt(P.pathLen(pb),1)}</b> — 같은 점 수에도 RRT*가 더 짧고 반듯해요.`
+      : (timer?`나란히 자라는 중…`:'"나란히 키우기"로 같은 씨앗에서 둘을 비교하세요.'); }
+  function play(){ if(timer)clearInterval(timer); timer=setInterval(()=>{ for(let k=0;k<2;k++){grow(TA);grow(TB);} render(); if(TA.nodes.length>180){clearInterval(timer);timer=null;} },45); }
+  document.getElementById('go1').onclick=()=>{ reset(); play(); };
+  document.getElementById('rst1').onclick=reset; reset();
+})();
+
+// ===== STEP 2: convergence with more samples =====
+(function(){ const b=board(); let T; let history=[];
+  function reset(){ T=makeTree(42,0.7,1.4,true); history=[]; render(); }
+  function render(){ let s=obsSVG(b)+treeSVG(b,T.nodes); const path=pathTo(T.nodes,T.gi);
+    if(path){ s+=pathSVG(b,path,'var(--good)',4); }
+    s+=ends(b);
+    document.getElementById('s2').innerHTML=S.svg(b,s,'수렴');
+    // 막대: 현재 길이 vs 최단
+    const cur=path?P.pathLen(path):null;
+    let bar='';
+    if(cur){ const over=(cur/STRAIGHT-1)*100;
+      bar=VZ.barRow?'':''; // fallback
+      bar=`<div style="font-size:12px;color:var(--muted);font-family:monospace;margin-bottom:4px">경로 길이 ${fmt(cur,2)} · 최단 ${fmt(STRAIGHT,2)} · +${over.toFixed(0)}%</div>
+        <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:8px;height:18px;position:relative;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${(STRAIGHT/cur*100).toFixed(1)}%;background:var(--good);opacity:.5"></div>
+          <div style="position:absolute;left:${(STRAIGHT/cur*100).toFixed(1)}%;top:0;bottom:0;border-left:2px dashed var(--hot)"></div>
+        </div>`; }
+    document.getElementById('bar2').innerHTML=bar;
+    document.getElementById('lab2').innerHTML= !T||T.nodes.length<=1?'"점 추가"로 점을 부어보세요.':(T.gi<0?`아직 목표 못 찾음 — 가지 ${T.nodes.length-1}개`:`점 ${T.nodes.length}개 · 경로 길이 <b style="color:var(--good)">${fmt(cur,2)}</b> (최단 ${fmt(STRAIGHT,2)})${history.length>1?` · 직전보다 ${history[history.length-2]>cur?'<b style="color:var(--good)">짧아짐 ↓</b>':'유지'}`:''}`); }
+  function add(){ for(let k=0;k<200;k++)grow(T); const path=pathTo(T.nodes,T.gi); if(path)history.push(P.pathLen(path)); render(); }
+  document.getElementById('go2').onclick=add;
+  document.getElementById('rst2').onclick=reset; reset();
+})();
+
+// ===== STEP 3: summary (RRT vs RRT* converged) =====
+(function(){ const b=board();
+  // RRT* 충분히 수렴시킨 경로 표시
+  const T=makeTree(42,0.7,1.4,true); for(let k=0;k<1200;k++)grow(T); const path=pathTo(T.nodes,T.gi);
+  let s=obsSVG(b)+treeSVG(b,T.nodes); if(path)s+=pathSVG(b,path,'var(--good)',4);
+  s+=pathSVG(b,[START,GOAL],'var(--muted)',2,'6 4'); s+=ends(b);
+  document.getElementById('s3').innerHTML=S.svg(b,s,'점근적 최적');
+  const L=path?P.pathLen(path):0;
+  document.getElementById('lab3').innerHTML=`점 ${T.nodes.length}개에서 RRT* 경로 <b style="color:var(--good)">${fmt(L,2)}</b> ≈ 최단 <b>${fmt(STRAIGHT,2)}</b> — 거의 곧게 수렴했어요. 👍 점근적 최적 · 👎 한 점당 계산이 RRT보다 많음.`;
+})();
+</script>
+</body>
+</html>
