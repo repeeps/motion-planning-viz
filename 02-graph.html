@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · 길찾기 = 그래프 탐색 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--muted); min-width:84px;}
+  .ctl input[type=range]{flex:1; min-width:140px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 1 · 공간과 문제 · CH 02</div>
+    <h1>길찾기 = 그래프 탐색</h1>
+    <p class="intro">설정공간은 연속(連續)이에요 — 점이 갈 수 있는 자리가 무한히 많죠. 컴퓨터는 무한을 다 따져볼 수 없어요. 그래서 공간을 <b>격자(칸)로 쪼개고</b>, 옆 칸끼리 <b>선으로 잇습니다</b>. 그러면 "길찾기"가 <b>"칸에서 칸으로 잇는 그래프 문제"</b>로 바뀌어요. 점·선으로 바꾸는 순간, 잘 알려진 <b>탐색 알고리즘</b>들을 그대로 쓸 수 있게 되죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 길은 무한히 많다</button>
+    <button data-s="1">01 · 칸으로 쪼갠다</button>
+    <button data-s="2">02 · 칸=점, 이웃=선</button>
+    <button data-s="3">03 · 이제 그래프 문제</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — Infinitely Many Paths</span>
+    <h2>연속 공간엔 길이 무한히 많다</h2>
+    <p class="lead"><span style="color:var(--good)">출발</span>에서 <span style="color:var(--hot)">목표</span>로 가는 길을 몇 개나 그릴 수 있을까요? <b>무한히</b> 많아요 — 조금씩 다른 곡선이 끝없이 가능하죠. 아래 <b>여러 길 보기</b>를 누르면 제멋대로인 후보들이 깜빡여요. 컴퓨터는 이 무한을 <b>전부 따져볼 수 없어요</b>.</p>
+    <div class="scene" id="s0"></div>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="more0">🎲 여러 길 보기</button></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 무한한 후보를 다룰 수 없으니, 공간을 <b>유한한 칸</b>으로 줄여야 해요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Discretize into Cells</span>
+    <h2>공간을 격자로 쪼갠다</h2>
+    <p class="lead">공간 위에 <b>격자</b>를 덮어요. 장애물에 걸리는 칸은 <span style="color:var(--k)">막힘(빨강)</span>, 나머지는 <span style="color:var(--q)">자유 칸</span>. 슬라이더로 <b>칸 크기</b>를 바꿔보세요 — 칸이 잘면 장애물을 정밀하게 따라가지만 칸 수가 늘고, 굵으면 거칠지만 가벼워요.</p>
+    <div class="ctl"><label>격자 해상도</label><input type="range" id="res" min="6" max="20" step="1" value="12"><span class="big" id="resv" style="min-width:64px"></span></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 연속 공간이 <b>유한 개의 자유 칸</b>으로 바뀌었어요. 이제 셀 수 있죠.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Cells are Nodes, Neighbors are Edges</span>
+    <h2>칸 = 점(노드), 이웃 = 선(엣지)</h2>
+    <p class="lead">각 자유 칸을 <b>점(노드)</b>으로, 맞닿은 칸끼리 <b>선(엣지)</b>으로 이어요. 이게 <b>그래프</b>예요. 이웃을 <b>상하좌우 4방향</b>으로 할지 <b>대각선 포함 8방향</b>으로 할지 골라보세요 — 8방향은 비스듬히 갈 수 있어 길이 더 짧아져요.</p>
+    <div class="ctl"><button class="btn" id="conn">4방향 ↔ 8방향</button></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 점과 선으로 바뀌는 순간, <b>"그래프에서 길찾기"</b>라는 잘 풀린 문제가 돼요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Now It's a Graph Problem</span>
+    <h2>"칸에서 칸으로" — 그래프 위의 길찾기</h2>
+    <p class="lead">출발 칸에서 목표 칸까지, <b>이어진 칸들을 따라가는 한 줄</b>이 곧 경로예요. <b>길 찾기</b>를 누르면 그래프를 따라 한 경로가 그려져요. "어떻게 영리하게 찾나"가 다음 PART의 주제 — 물처럼 퍼지는 <b>BFS</b>부터 시작해요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go3">🧭 길 찾기</button> <button class="btn" id="rst3">↺ 리셋</button></div>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 격자 + 그래프가 준비됐어요. 다음 → <a href="03-bfs.html" style="color:var(--q);font-weight:700">CH 03 · 너비우선 BFS</a>에서 "가장 가까운 칸부터" 퍼뜨려 길을 찾아요.</p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 격자·그래프·경로 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '02 · 그래프 탐색');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+// 픽셀 격자 헬퍼: cols x rows, 셀 cs px, 좌상단 (ox,oy)
+function gridBoard(cols,rows,cs){ const ox=14,oy=14; return {cols,rows,cs,ox,oy,W:ox*2+cols*cs,H:oy*2+rows*cs,
+  cx:x=>ox+(x+0.5)*cs, cy:y=>oy+(y+0.5)*cs, gx:x=>ox+x*cs, gy:y=>oy+y*cs}; }
+function frame(b){ return {W:b.W,H:b.H}; }
+// 연속 좌표계 장애물(직사각, 0..1 정규화 공간)
+const OBS=[{x:.18,y:.12,w:.16,h:.5},{x:.5,y:.38,w:.34,h:.16},{x:.62,y:.62,w:.14,h:.26}];
+function obsHitNorm(nx,ny){ return OBS.some(o=>nx>=o.x&&nx<=o.x+o.w&&ny>=o.y&&ny<=o.y+o.h); }
+// 셀이 장애물에 걸리나 — 셀 중심+모서리 샘플
+function cellBlocked(cols,rows,x,y){ for(let sx=0.15;sx<=0.85;sx+=0.35)for(let sy=0.15;sy<=0.85;sy+=0.35){ if(obsHitNorm((x+sx)/cols,(y+sy)/rows)) return true; } return false; }
+
+// ===== STEP 0: infinite curves =====
+(function(){ const W=360,H=260; const A=[40,200], B=[320,60];
+  const obs=[{x:140,y:90,w:70,h:110}];
+  function curve(seed){ // 두 점 사이 흔들리는 베지어
+    const mx=(A[0]+B[0])/2+ (seed%7-3)*30, my=(A[1]+B[1])/2 + ((seed*13)%11-5)*22;
+    return `M${A[0]} ${A[1]} Q ${mx} ${my} ${B[0]} ${B[1]}`; }
+  let n=1;
+  function render(){ let s=obs.map(o=>`<rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" rx="4" fill="rgba(123,156,255,.12)" stroke="var(--q)" stroke-width="1.5"/>`).join('');
+    for(let i=0;i<n;i++) s+=`<path d="${curve(i*3+1)}" fill="none" stroke="var(--v)" stroke-width="${i===n-1?2.4:1.2}" opacity="${i===n-1?.95:.35}"/>`;
+    s+=`<circle cx="${A[0]}" cy="${A[1]}" r="6" fill="var(--good)"/><circle cx="${B[0]}" cy="${B[1]}" r="6" fill="var(--hot)"/>`;
+    document.getElementById('s0').innerHTML=S.svg({W,H},s,'연속 공간');
+    document.getElementById('lab0').textContent=`그린 후보 경로 ${n}개 — 사실은 무한히 더 그릴 수 있어요.`; }
+  document.getElementById('more0').onclick=()=>{ n=Math.min(n+2,12); render(); }; render();
+})();
+
+// ===== STEP 1: discretize =====
+let res=12;
+(function(){
+  function render(){ document.getElementById('resv').textContent=res+'×'+Math.round(res*0.72);
+    const cols=res, rows=Math.round(res*0.72), cs=Math.min(330/cols,238/rows), b=gridBoard(cols,rows,cs);
+    let s=''; let free=0,blk=0;
+    for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){ const bl=cellBlocked(cols,rows,x,y);
+      if(bl)blk++;else free++;
+      s+=`<rect x="${b.gx(x)+0.5}" y="${b.gy(y)+0.5}" width="${cs-1}" height="${cs-1}" rx="1.5" fill="${bl?'rgba(251,113,133,.30)':'rgba(123,156,255,.07)'}" stroke="${bl?'var(--k)':'var(--line)'}" stroke-width="${bl?1:.5}"/>`; }
+    document.getElementById('s1').innerHTML=S.svg(frame(b),s,'격자');
+    document.getElementById('lab1').innerHTML=`자유 칸 <b style="color:var(--q)">${free}</b> · 막힌 칸 <b style="color:var(--k)">${blk}</b> · 총 ${free+blk}칸 (유한!)`; }
+  document.getElementById('res').addEventListener('input',e=>{res=+e.target.value; render();}); render();
+})();
+
+// ===== STEP 2: graph (nodes + edges) =====
+let diag=false;
+(function(){ const cols=11,rows=8,cs=Math.min(330/cols,238/rows),b=gridBoard(cols,rows,cs);
+  function free(x,y){ return x>=0&&y>=0&&x<cols&&y<rows&&!cellBlocked(cols,rows,x,y); }
+  function render(){
+    let edges='',nodes=''; let ne=0;
+    const dirs=diag?[[1,0],[0,1],[1,1],[1,-1]]:[[1,0],[0,1]];
+    for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){ if(!free(x,y))continue;
+      for(const[dx,dy]of dirs){ const nx=x+dx,ny=y+dy; if(!free(nx,ny))continue;
+        if(diag&&dx!==0&&dy!==0){ if(!free(x+dx,y)||!free(x,y+dy))continue; } // 코너 컷 방지
+        edges+=`<line x1="${b.cx(x)}" y1="${b.cy(y)}" x2="${b.cx(nx)}" y2="${b.cy(ny)}" stroke="var(--v)" stroke-width="1" opacity=".4"/>`; ne++; } }
+    let nn=0;
+    for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){ if(free(x,y)){ nodes+=`<circle cx="${b.cx(x)}" cy="${b.cy(y)}" r="2.6" fill="var(--q)"/>`; nn++; }
+      else nodes+=`<rect x="${b.gx(x)+1}" y="${b.gy(y)+1}" width="${cs-2}" height="${cs-2}" rx="2" fill="rgba(251,113,133,.18)"/>`; }
+    document.getElementById('s2').innerHTML=S.svg(frame(b),edges+nodes,'그래프');
+    document.getElementById('lab2').innerHTML=`${diag?'<b>8방향</b> (대각 포함)':'<b>4방향</b> (상하좌우)'} · 노드 ${nn} · 엣지 ${ne}`; }
+  document.getElementById('conn').onclick=()=>{diag=!diag; render();}; render();
+})();
+
+// ===== STEP 3: path on graph =====
+(function(){ const cols=11,rows=8,cs=Math.min(330/cols,238/rows),b=gridBoard(cols,rows,cs);
+  const g=P.makeGrid(cols,rows,false);
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++) if(cellBlocked(cols,rows,x,y)) g.walls.add(P.key(x,y));
+  const START=[0,rows-1], GOAL=[cols-1,0];
+  let res=null, frac=0, timer=null;
+  function base(){ let s='';
+    for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){ const bl=g.walls.has(P.key(x,y));
+      s+=`<rect x="${b.gx(x)+0.5}" y="${b.gy(y)+0.5}" width="${cs-1}" height="${cs-1}" rx="1.5" fill="${bl?'rgba(251,113,133,.28)':'rgba(123,156,255,.06)'}" stroke="var(--line)" stroke-width=".5"/>`; }
+    return s; }
+  function render(){ let s=base();
+    if(res&&res.found){ const k=Math.max(1,Math.round(res.path.length*frac));
+      const pts=res.path.slice(0,k);
+      let d=''; pts.forEach((p,i)=>{ d+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' '; });
+      s+=`<path d="${d}" fill="none" stroke="var(--good)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+      pts.forEach(p=>{ s+=`<circle cx="${b.cx(p[0])}" cy="${b.cy(p[1])}" r="3" fill="var(--good)"/>`; }); }
+    s+=`<circle cx="${b.cx(START[0])}" cy="${b.cy(START[1])}" r="6" fill="var(--good)"/><circle cx="${b.cx(GOAL[0])}" cy="${b.cy(GOAL[1])}" r="6" fill="var(--hot)"/>`;
+    document.getElementById('s3').innerHTML=S.svg(frame(b),s,'그래프 위 경로');
+    document.getElementById('lab3').innerHTML= !res?'출발(초록)→목표(주황). "길 찾기"를 눌러보세요.': res.found?(frac>=1?`경로 발견 — <b style="color:var(--good)">${res.path.length}칸</b>을 따라가요. 이게 그래프 탐색의 결과예요.`:'그래프를 따라 잇는 중…'):'길이 없어요(막힘).'; }
+  function play(){ if(timer)clearInterval(timer); res=P.search(g,START,GOAL,{mode:'bfs'}); frac=0; render();
+    timer=setInterval(()=>{ frac=Math.min(1,frac+0.08); render(); if(frac>=1)clearInterval(timer); },45); }
+  document.getElementById('go3').onclick=play;
+  document.getElementById('rst3').onclick=()=>{ if(timer)clearInterval(timer); res=null; frac=0; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

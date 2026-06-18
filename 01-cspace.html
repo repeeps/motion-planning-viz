@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · 설정공간 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:grab;} .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:14px;} @media(max-width:680px){.two{grid-template-columns:1fr;}}
+  .two .cap{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:center; margin:0 0 4px; letter-spacing:.05em;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0;}
+  .ctl label{font-size:13px; color:var(--muted); min-width:84px;}
+  .ctl input[type=range]{flex:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 1 · 공간과 문제 · CH 01</div>
+    <h1>설정공간 — 로봇을 "점"으로 만들기</h1>
+    <p class="intro">로봇은 크기가 있어요. 폭이 있는 로봇이 장애물 사이를 지날 수 있는지 따지는 건 까다롭죠. 그런데 한 가지 마법을 쓰면 — <b>장애물을 로봇 크기만큼 부풀리고</b>, 로봇을 <b>크기 없는 한 점</b>으로 바꾸면 — 똑같은 문제가 훨씬 쉬워져요. 이 "부풀린 세상"을 <b>설정공간(C-space)</b>이라 불러요. 이 코스의 모든 길찾기는 사실 이 점의 여행이에요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 로봇엔 크기가 있다</button>
+    <button data-s="1">01 · 장애물을 부풀린다</button>
+    <button data-s="2">02 · 점 ⟺ 원반</button>
+    <button data-s="3">03 · 차원이 늘면</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — The Robot Has a Body</span>
+    <h2>로봇은 점이 아니라 "덩치"다</h2>
+    <p class="lead"><span style="color:var(--q)">파란 원반</span>이 로봇이에요. 가운데(점)가 아니라 <b>몸 전체</b>가 장애물에 닿으면 충돌이죠. <b>로봇을 끌어</b> 두 장애물 사이로 지나가 보세요. 중심은 빈 곳에 있어도 <b>몸이 닿으면 빨강</b>이에요 — 이래서 "중심이 어디 갈 수 있나"를 따지기가 헷갈려요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 로봇이 <b>원반(크기)</b>인 한, "닿나 안 닿나"를 매번 몸 전체로 검사해야 해요. 점이라면 훨씬 간단할 텐데요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Inflate the Obstacles</span>
+    <h2>장애물을 로봇 반지름만큼 부풀린다</h2>
+    <p class="lead">마법은 이거예요. 장애물을 <b>로봇 반지름(r)만큼 키우고</b>, 로봇은 <b>점</b>으로 줄여요. 그러면 "원반이 장애물에 안 닿음" = "점이 <span style="color:var(--hot)">부푼 장애물</span> 밖에 있음"으로 똑같아져요. 슬라이더로 로봇 크기를 바꾸면 <b>부푼 영역(연한 주황)</b>이 따라 커져요.</p>
+    <div class="ctl"><label>로봇 반지름 r</label><input type="range" id="rr" min="0" max="1.2" step="0.05" value="0.6"><span class="big" id="rrv" style="min-width:52px"></span></div>
+    <div class="two">
+      <div><p class="cap">실제 세상 (원반 로봇)</p><div class="scene" id="s1a"></div></div>
+      <div><p class="cap">설정공간 (점 로봇)</p><div class="scene" id="s1b"></div></div>
+    </div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 부푼 만큼이 정확히 로봇 반지름. 이게 두 모양을 더하는 <b>"민코프스키 합"</b>이에요 — 이름은 몰라도 돼요, 그림이 전부예요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Point ⟺ Disk</span>
+    <h2>두 그림은 완전히 같은 이야기</h2>
+    <p class="lead"><b>점(설정공간)</b>을 끌어보세요. 왼쪽엔 같은 위치의 <b>원반(실제)</b>이 따라 움직여요. 점이 부푼 영역에 들어가는 <b>바로 그 순간</b> 원반도 장애물에 닿아요 — 두 충돌은 항상 동시에 일어나죠. 그러니 이제부터 <b>점만 신경 쓰면</b> 돼요.</p>
+    <div class="two">
+      <div><p class="cap">실제 세상 (원반)</p><div class="scene" id="s2a"></div></div>
+      <div><p class="cap">설정공간 (점 — 여기를 끄세요)</p><div class="scene" id="s2b"></div></div>
+    </div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 충돌 검사가 "<b>원반 vs 장애물</b>"에서 "<b>점이 금지구역 안인가</b>"로 단순해져요. 다음 챕터부터 모든 길찾기는 이 점의 여행입니다.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — More Dimensions</span>
+    <h2>회전·관절이 생기면 차원이 늘어난다</h2>
+    <p class="lead">로봇이 <b>방향(각도)</b>까지 가지면, 설정공간은 (x, y) 평면이 아니라 <b>(x, y, 각도)</b>의 3차원이 돼요. 막대 로봇을 <b>회전</b>시켜 보세요 — 같은 (x,y)라도 각도에 따라 통과 여부가 달라지죠. 팔 관절이 N개면 설정공간은 <b>N차원</b>이에요.</p>
+    <div class="ctl"><label>막대 각도 θ</label><input type="range" id="th" min="0" max="180" step="2" value="90"><span class="big" id="thv" style="min-width:64px"></span></div>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 차원이 늘면 부풀리기를 그림으로 그리기 어려워져요. 그래서 격자로 쪼개거나(PART 2) 점을 뿌리는(PART 4) 방법이 필요하죠. 다음 → <a href="02-graph.html" style="color:var(--q);font-weight:700">CH 02 · 길찾기 = 그래프 탐색</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 모든 충돌·부풀리기는 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '01 · 설정공간');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt, clamp=VZ.clamp;
+// 사각 장애물(축 정렬). 거리계산: 점→사각 최단거리.
+function board(){ return S.board({W:360,H:300,s:36,ox:18,oy:282}); } // x:0..9.5, y:0..7.8
+const OBS=[{x:2.2,y:1.4,w:1.6,h:4.2},{x:5.2,y:1.4,w:1.6,h:4.2}]; // 두 기둥, 사이 간격
+function rectSVG(b,o,fill,stroke,extra){ return `<rect x="${b.X(o.x)}" y="${b.Y(o.y+o.h)}" width="${o.w*b.s}" height="${o.h*b.s}" rx="3" fill="${fill}" stroke="${stroke||'none'}" ${extra||''}/>`; }
+// 점→사각 최단거리 (사각 밖이면 양수, 안이면 0)
+function distRect(px,py,o){ const dx=Math.max(o.x-px,0,px-(o.x+o.w)); const dy=Math.max(o.y-py,0,py-(o.y+o.h)); return Math.hypot(dx,dy); }
+function inRect(px,py,o,pad){ return px>=o.x-pad && px<=o.x+o.w+pad && py>=o.y-pad && py<=o.y+o.h+pad; }
+function hitDisk(px,py,r){ return OBS.some(o=>distRect(px,py,o)<=r+1e-9); } // 원반(중심 px,py, 반지름 r) 충돌
+function px(id,b,e){ const sv=document.querySelector('#'+id+' svg'); if(!sv)return null; const r=sv.getBoundingClientRect();
+  return [ (e.clientX-r.left)/r.width*b.W/b.s - b.ox/b.s, -((e.clientY-r.top)/r.height*b.H - b.oy)/b.s ]; }
+function drag(id,b,onMove){ const el=document.getElementById(id); let on=false;
+  const mv=e=>{const p=px(id,b,e); if(p) onMove(p);};
+  el.addEventListener('pointerdown',e=>{on=true; mv(e);});
+  el.addEventListener('pointermove',e=>{if(on)mv(e);});
+  const up=()=>on=false; el.addEventListener('pointerup',up); el.addEventListener('pointerleave',up);
+}
+
+// ===== STEP 0: disk robot, body collision =====
+(function(){ const b=board(); let pos=[4.5,6.4]; const RR=0.55;
+  function render(){ const hit=hitDisk(pos[0],pos[1],RR);
+    let s=OBS.map(o=>rectSVG(b,o,'rgba(123,156,255,.10)','var(--q)','stroke-width="1.5"')).join('');
+    s+=`<circle cx="${b.X(pos[0])}" cy="${b.Y(pos[1])}" r="${RR*b.s}" fill="${hit?'rgba(251,113,133,.22)':'rgba(110,231,183,.18)'}" stroke="${hit?'var(--k)':'var(--good)'}" stroke-width="2"/>`;
+    s+=`<circle cx="${b.X(pos[0])}" cy="${b.Y(pos[1])}" r="3" fill="${hit?'var(--k)':'var(--good)'}"/>`;
+    document.getElementById('s0').innerHTML=S.svg(b,s,'원반 로봇');
+    document.getElementById('lab0').innerHTML= hit?`로봇 <b style="color:var(--k)">몸이 장애물에 닿았어요 — 충돌!</b> (중심은 빈 곳이라도)`:`충돌 없음. 좁은 틈으로 끌어보면 몸이 먼저 닿아요.`; }
+  drag('s0',b,p=>{ pos=[clamp(p[0],0.4,9),clamp(p[1],0.4,7.4)]; render(); }); render();
+})();
+
+// ===== STEP 1: inflate =====
+let rr=0.6;
+(function(){ const ba=board(), bb=board();
+  function render(){ document.getElementById('rrv').textContent=fmt(rr,2);
+    // 실제: 원반 + 원래 장애물
+    let a=OBS.map(o=>rectSVG(ba,o,'rgba(123,156,255,.12)','var(--q)','stroke-width="1.5"')).join('');
+    const rpos=[3.9,6.6]; a+=`<circle cx="${ba.X(rpos[0])}" cy="${ba.Y(rpos[1])}" r="${rr*ba.s}" fill="rgba(110,231,183,.16)" stroke="var(--good)" stroke-width="2"/><circle cx="${ba.X(rpos[0])}" cy="${ba.Y(rpos[1])}" r="3" fill="var(--good)"/>`;
+    document.getElementById('s1a').innerHTML=S.svg(ba,a,'원반 r='+fmt(rr,2));
+    // C-space: 부푼 장애물(라운드 외곽) + 점
+    let c=OBS.map(o=>`<rect x="${bb.X(o.x-rr)}" y="${bb.Y(o.y+o.h+rr)}" width="${(o.w+2*rr)*bb.s}" height="${(o.h+2*rr)*bb.s}" rx="${rr*bb.s}" fill="rgba(251,191,36,.13)" stroke="var(--hot)" stroke-width="1.5" stroke-dasharray="4 4"/>`).join('');
+    c+=OBS.map(o=>rectSVG(bb,o,'rgba(123,156,255,.12)','var(--q)','stroke-width="1"')).join('');
+    c+=`<circle cx="${bb.X(rpos[0])}" cy="${bb.Y(rpos[1])}" r="4" fill="var(--good)"/>`;
+    document.getElementById('s1b').innerHTML=S.svg(bb,c,'점 + 부푼 장애물');
+    const gap=OBS[1].x-(OBS[0].x+OBS[0].w); // 틈 간격
+    document.getElementById('lab1').innerHTML=`틈 간격 ${fmt(gap,1)} · 로봇 지름 ${fmt(rr*2,2)} → ${rr*2<=gap+1e-9?`<b style="color:var(--good)">통과 가능</b> (부푼 두 영역이 안 겹침)`:`<b style="color:var(--k)">통과 불가</b> (부푼 영역이 틈을 막음)`}`; }
+  document.getElementById('rr').addEventListener('input',e=>{ rr=+e.target.value; render(); }); render();
+})();
+
+// ===== STEP 2: point ⟺ disk linked =====
+(function(){ const ba=board(), bb=board(); let pos=[4.5,6.6]; const R=0.6;
+  function render(){ const hit=hitDisk(pos[0],pos[1],R);
+    let a=OBS.map(o=>rectSVG(ba,o,'rgba(123,156,255,.12)','var(--q)','stroke-width="1.5"')).join('');
+    a+=`<circle cx="${ba.X(pos[0])}" cy="${ba.Y(pos[1])}" r="${R*ba.s}" fill="${hit?'rgba(251,113,133,.20)':'rgba(110,231,183,.16)'}" stroke="${hit?'var(--k)':'var(--good)'}" stroke-width="2"/><circle cx="${ba.X(pos[0])}" cy="${ba.Y(pos[1])}" r="3" fill="${hit?'var(--k)':'var(--good)'}"/>`;
+    document.getElementById('s2a').innerHTML=S.svg(ba,a,'원반');
+    let c=OBS.map(o=>`<rect x="${bb.X(o.x-R)}" y="${bb.Y(o.y+o.h+R)}" width="${(o.w+2*R)*bb.s}" height="${(o.h+2*R)*bb.s}" rx="${R*bb.s}" fill="${hit?'rgba(251,113,133,.16)':'rgba(251,191,36,.13)'}" stroke="${hit?'var(--k)':'var(--hot)'}" stroke-width="1.5" stroke-dasharray="4 4"/>`).join('');
+    c+=`<circle cx="${bb.X(pos[0])}" cy="${bb.Y(pos[1])}" r="5" fill="${hit?'var(--k)':'var(--good)'}"/>`;
+    document.getElementById('s2b').innerHTML=S.svg(bb,c,'점');
+    document.getElementById('lab2').innerHTML= hit?`점이 <b style="color:var(--k)">금지구역(부푼 장애물) 안</b> → 원반도 동시에 충돌.`:`점이 자유 공간에 있어요 → 원반도 안전. 두 그림의 충돌은 <b>항상 동시</b>.`; }
+  drag('s2b',bb,p=>{ pos=[clamp(p[0],0.4,9),clamp(p[1],0.4,7.4)]; render(); }); render();
+})();
+
+// ===== STEP 3: rotation adds a dimension =====
+(function(){ const b=board(); let th=90; const L=1.6, cx=4.5, cy=3.5; // 막대 중심(틈 중앙), 길이 L
+  function barEnds(){ const a=th*Math.PI/180, hx=Math.cos(a)*L/2, hy=Math.sin(a)*L/2; return [[cx-hx,cy-hy],[cx+hx,cy+hy]]; }
+  function segRectHit(p1,p2){ // 막대(선분)가 어느 장애물과 겹치나 — 샘플링
+    for(let t=0;t<=1.0001;t+=0.04){ const x=p1[0]+(p2[0]-p1[0])*t, y=p1[1]+(p2[1]-p1[1])*t;
+      if(OBS.some(o=>inRect(x,y,o,0))) return true; } return false; }
+  function render(){ document.getElementById('thv').textContent=th+'°';
+    const [e1,e2]=barEnds(); const hit=segRectHit(e1,e2);
+    let s=OBS.map(o=>rectSVG(b,o,'rgba(123,156,255,.12)','var(--q)','stroke-width="1.5"')).join('');
+    s+=`<line x1="${b.X(e1[0])}" y1="${b.Y(e1[1])}" x2="${b.X(e2[0])}" y2="${b.Y(e2[1])}" stroke="${hit?'var(--k)':'var(--good)'}" stroke-width="5" stroke-linecap="round"/>`;
+    s+=`<circle cx="${b.X(cx)}" cy="${b.Y(cy)}" r="3.5" fill="var(--ink)"/>`;
+    document.getElementById('s3').innerHTML=S.svg(b,s,'막대 로봇 θ='+th+'°');
+    document.getElementById('lab3').innerHTML= hit?`같은 (x,y) 중심인데 이 각도에선 <b style="color:var(--k)">장애물에 걸려요</b>.`:`이 각도에선 <b style="color:var(--good)">통과</b>. 위치는 그대로, <b>각도</b>만 바꿨는데 결과가 달라지죠 → 그래서 각도도 하나의 "차원".`; }
+  document.getElementById('th').addEventListener('input',e=>{ th=+e.target.value; render(); }); render();
+})();
+</script>
+</body>
+</html>
