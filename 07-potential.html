@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07 · 포텐셜 필드 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:grab;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .leg{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0;}
+  .leg i{display:inline-block; width:12px; height:12px; border-radius:50%; vertical-align:-1px; margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 3 · 격자를 넘어 · CH 07</div>
+    <h1>포텐셜 필드 — 끌어당기고, 밀어낸다</h1>
+    <p class="intro">격자를 다 만들지 않는 첫 번째 방법. 공간 전체를 <b>"기울어진 언덕"</b>으로 바꿔요 — <b>목표는 골짜기처럼 끌어당기고</b>, <b>장애물은 봉우리처럼 밀어내요</b>. 그러면 로봇은 그냥 <b>경사를 따라 굴러가기만</b> 하면 돼요. 계산이 가볍고 즉각적이라 실시간에 강하죠. 다만 — 엉뚱한 <b>웅덩이(지역 최소)</b>에 빠지면 못 나온다는 치명적 약점이 있어요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 언덕과 골짜기</button>
+    <button data-s="1">01 · 경사 따라 구른다</button>
+    <button data-s="2">02 · 웅덩이에 갇힌다</button>
+    <button data-s="3">03 · 빠르지만 불완전</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — Hills and Valleys</span>
+    <h2>목표는 골짜기, 장애물은 봉우리</h2>
+    <p class="lead">공간 위 각 지점에 <b>화살표</b>를 그렸어요 — 그 자리에 놓인 공이 <b>받는 힘의 방향</b>이에요. <span style="color:var(--good)">목표</span> 쪽으로는 당기는 힘(골짜기로 굴러가듯), <span style="color:var(--hot)">장애물</span> 근처에선 밀어내는 힘(봉우리에서 미끄러지듯)이 작용해요. 둘을 <b>더한 게</b> 화살표예요.</p>
+    <div class="leg"><span><i style="background:var(--good)"></i>목표(당김)</span><span><i style="background:var(--hot)"></i>장애물(밀어냄)</span><span><i style="background:var(--q)"></i>합쳐진 힘</span></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0">화살표를 따라가면 자연스럽게 목표로 흘러가요 — 길을 "탐색"하지 않고 그냥 "굴러"가죠.</p>
+    <p class="note" style="margin-top:6px">→ 격자를 채우거나 그래프를 만들 필요가 없어요. 그 자리의 힘만 계산하면 되니 <b>아주 가벼워요</b>.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Roll Downhill</span>
+    <h2>공을 놓으면 경사를 따라 구른다</h2>
+    <p class="lead"><b>굴리기</b>를 누르면 <span style="color:var(--good)">공</span>이 힘을 따라 이동해요 — 목표에 끌리면서 장애물은 비껴서요. <b>출발점을 끌어</b> 여기저기서 굴려보세요. 대부분 매끄럽게 목표에 닿아요. (공을 장애물 <b>정중앙 뒤쪽 일직선</b>에 두면 좌우 힘이 상쇄돼 멈칫할 수도 있어요 — 다음 스텝의 예고편이에요.)</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go1">⚽ 굴리기</button> <button class="btn" id="rst1">↺ 리셋</button></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 탐색 없이 "그 자리 힘"만 보고 한 걸음씩 — 그래서 빠르고, 움직이는 장애물에도 즉각 반응해요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Trapped in a Local Minimum</span>
+    <h2>오목한 곳에 갇히면 — 못 나온다</h2>
+    <p class="lead">장애물이 <b>오목하게(ㄷ자)</b> 놓이면 함정이 생겨요. 공이 안으로 굴러 들어가면, 한가운데에서 <b>당기는 힘(목표)과 밀어내는 힘(장애물)이 정확히 상쇄</b>돼 힘이 0이 돼요 — <b>웅덩이의 바닥</b>이죠. 목표가 코앞에 보여도 <b>꼼짝 못 해요</b>. <b>굴리기</b>로 직접 갇혀보세요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go2">⚽ 굴리기</button> <button class="btn" id="rst2">↺ 리셋</button></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 분명히 <b>길은 있는데</b>(돌아가면 됨) 공은 못 찾아요. "<b>완전성이 없다</b>"는 거예요 — 길이 있어도 못 찾을 수 있죠.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Fast but Incomplete</span>
+    <h2>장단점을 한눈에</h2>
+    <p class="lead">포텐셜 필드는 <b>가볍고 즉각적</b>이에요 — 그 자리 힘만 계산하니 고차원에서도, 움직이는 장애물에도 강하죠. 그래서 실제 로봇의 <b>실시간 회피</b>에 많이 쓰여요. 하지만 <b>지역 최소</b>라는 함정 때문에 <b>"길이 있으면 반드시 찾는다"는 보장이 없어요</b>. 빠름을 얻고 완전성을 잃은 거예요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ "<b>길이 있으면 반드시 찾는</b>" 보장이 필요할 땐? 공간에 점을 뿌려 잇는 샘플링으로 가요. 다음 → <a href="08-prm.html" style="color:var(--q);font-weight:700">CH 08 · PRM</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 힘·궤적 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '07 · 포텐셜 필드');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt, clamp=VZ.clamp;
+function board(){ return S.board({W:420,H:280,s:42,ox:14,oy:266}); } // x:0..9.7, y:0..6.3
+const GOAL=[9,4];
+const OPT={ka:2,kr:6,rng:0.8};
+function obsSVG(b,obs){ return obs.map(o=>`<circle cx="${b.X(o.x)}" cy="${b.Y(o.y)}" r="${o.r*b.s}" fill="rgba(251,113,133,.16)" stroke="var(--hot)" stroke-width="1.5"/>`).join(''); }
+function goalSVG(b){ return `<circle cx="${b.X(GOAL[0])}" cy="${b.Y(GOAL[1])}" r="9" fill="var(--good)" stroke="#fff" stroke-width="1.5"/><circle cx="${b.X(GOAL[0])}" cy="${b.Y(GOAL[1])}" r="16" fill="none" stroke="var(--good)" stroke-width="1" opacity=".4"/>`; }
+function px(id,b,e){ const sv=document.querySelector('#'+id+' svg'); if(!sv)return null; const r=sv.getBoundingClientRect();
+  return [ (e.clientX-r.left)/r.width*b.W/b.s - b.ox/b.s, -((e.clientY-r.top)/r.height*b.H - b.oy)/b.s ]; }
+function drag(id,b,onMove){ const el=document.getElementById(id); let on=false; const mv=e=>{const p=px(id,b,e); if(p)onMove(p);};
+  el.addEventListener('pointerdown',e=>{on=true;mv(e);}); el.addEventListener('pointermove',e=>{if(on)mv(e);});
+  const up=()=>on=false; el.addEventListener('pointerup',up); el.addEventListener('pointerleave',up); }
+// 힘 화살표 필드
+function fieldSVG(b,obs,gx0,gx1,gy0,gy1,gap){ let s=''; for(let x=gx0;x<=gx1;x+=gap)for(let y=gy0;y<=gy1;y+=gap){
+    let inside=obs.some(o=>Math.hypot(x-o.x,y-o.y)<o.r); if(inside)continue;
+    const f=P.potential([x,y],GOAL,obs,OPT); const m=Math.hypot(f[0],f[1])||1; const L=0.42; const ux=f[0]/m*L,uy=f[1]/m*L;
+    const x2=x+ux,y2=y+uy;
+    s+=`<line x1="${b.X(x)}" y1="${b.Y(y)}" x2="${b.X(x2)}" y2="${b.Y(y2)}" stroke="var(--q)" stroke-width="1.3" opacity=".65"/>`;
+    s+=`<circle cx="${b.X(x2)}" cy="${b.Y(y2)}" r="1.6" fill="var(--q)"/>`; } return s; }
+// 경사하강
+function descend(start,obs,onStep,onDone){ let p=[...start]; let i=0; const path=[[...p]];
+  const timer=setInterval(()=>{ const f=P.potential(p,GOAL,obs,OPT); const m=Math.hypot(f[0],f[1]);
+    const dgoal=Math.hypot(GOAL[0]-p[0],GOAL[1]-p[1]);
+    if(dgoal<0.35){ clearInterval(timer); onDone(true,path,p); return; }
+    if(m<0.05||i>500){ clearInterval(timer); onDone(false,path,p); return; }
+    p=[p[0]+f[0]/m*0.08, p[1]+f[1]/m*0.08]; path.push([...p]); i++; onStep(path,p); },24);
+  return timer; }
+function pathSVG(b,path,c){ let d=''; path.forEach((q,i)=>d+=(i?'L':'M')+b.X(q[0]).toFixed(1)+' '+b.Y(q[1]).toFixed(1)+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>`; }
+
+// ===== STEP 0: field =====
+(function(){ const b=board(); const obs=[{x:5,y:4,r:1.0}];
+  let s=fieldSVG(b,obs,0.6,9.0,0.6,5.8,0.62)+obsSVG(b,obs)+goalSVG(b);
+  document.getElementById('s0').innerHTML=S.svg(b,s,'힘의 장(場)');
+})();
+
+// ===== STEP 1: roll downhill (single obstacle, success) =====
+(function(){ const b=board(); const obs=[{x:5,y:4,r:1.1}]; let start=[1,3.4]; let path=null,timer=null,result=null;
+  function render(){ let s=fieldSVG(b,obs,0.7,9.0,0.7,5.7,0.8)+obsSVG(b,obs)+goalSVG(b);
+    if(path) s+=pathSVG(b,path,'var(--good)');
+    const head=path?path[path.length-1]:start;
+    s+=`<circle cx="${b.X(head[0])}" cy="${b.Y(head[1])}" r="7" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s1').innerHTML=S.svg(b,s,'경사 하강');
+    document.getElementById('lab1').innerHTML= result==null?(path?'구르는 중…':'출발점(초록)을 끌어 위치를 정하고 "굴리기"를 누르세요.')
+      : result?`목표 도착! 힘을 따라 매끄럽게 굴러갔어요.`:`멈췄어요 — 좌우 힘이 상쇄된 지점(다음 스텝에서 자세히).`; }
+  function play(){ if(timer)clearInterval(timer); result=null; path=[[...start]];
+    timer=descend(start,obs,(pp)=>{path=pp;render();},(ok,pp)=>{path=pp;result=ok;render();}); render(); }
+  document.getElementById('go1').onclick=play;
+  document.getElementById('rst1').onclick=()=>{ if(timer)clearInterval(timer); path=null; result=null; render(); };
+  drag('s1',b,p=>{ if(timer)clearInterval(timer); start=[clamp(p[0],0.4,3.5),clamp(p[1],0.5,5.8)]; path=null; result=null; render(); });
+  render();
+})();
+
+// ===== STEP 2: local minimum trap =====
+const CUP=[{x:5.4,y:4,r:0.6},{x:5.0,y:3.0,r:0.6},{x:5.0,y:5.0,r:0.6},{x:4.5,y:2.4,r:0.5},{x:4.5,y:5.6,r:0.5}];
+(function(){ const b=board(); let start=[1,4]; let path=null,timer=null,result=null,stuck=null;
+  function render(){ let s=fieldSVG(b,CUP,0.7,9.0,0.7,5.7,0.8)+obsSVG(b,CUP)+goalSVG(b);
+    if(path) s+=pathSVG(b,path, result===false?'var(--hot)':'var(--good)');
+    const head=path?path[path.length-1]:start;
+    s+=`<circle cx="${b.X(head[0])}" cy="${b.Y(head[1])}" r="7" fill="${result===false?'var(--hot)':'var(--good)'}" stroke="#fff" stroke-width="1.5"/>`;
+    if(result===false&&stuck) s+=`<text x="${b.X(stuck[0])}" y="${b.Y(stuck[1])-13}" fill="var(--hot)" font-size="12" text-anchor="middle" font-family="monospace">갇힘!</text>`;
+    document.getElementById('s2').innerHTML=S.svg(b,s,'지역 최소');
+    document.getElementById('lab2').innerHTML= result==null?(path?'구르는 중…':'"굴리기"를 눌러보세요. 목표가 ㄷ자 뒤에 있어요.')
+      : result?'어라, 빠져나갔네요 — 다시 굴려보세요(보통은 갇혀요).':`<b style="color:var(--hot)">갇혔어요!</b> 목표(x=9)가 코앞인데 힘이 0인 웅덩이에서 못 나와요. 하지만 위/아래로 <b>돌아가는 길은 분명히 있죠</b>.`; }
+  function play(){ if(timer)clearInterval(timer); result=null; stuck=null; path=[[...start]];
+    timer=descend(start,CUP,(pp)=>{path=pp;render();},(ok,pp,p)=>{path=pp;result=ok;stuck=p;render();}); render(); }
+  document.getElementById('go2').onclick=play;
+  document.getElementById('rst2').onclick=()=>{ if(timer)clearInterval(timer); path=null; result=null; stuck=null; render(); };
+  render();
+})();
+
+// ===== STEP 3: pros/cons summary (static viz: trapped vs detour-exists) =====
+(function(){ const b=board();
+  let s=obsSVG(b,CUP)+goalSVG(b);
+  // 갇힌 경로(빨강, 직진해 웅덩이로)
+  s+=`<path d="M${b.X(1)} ${b.Y(4)} L${b.X(4.2)} ${b.Y(4)}" fill="none" stroke="var(--hot)" stroke-width="3"/>`;
+  s+=`<circle cx="${b.X(4.2)}" cy="${b.Y(4)}" r="7" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+  s+=`<text x="${b.X(4.2)}" y="${b.Y(4)-13}" fill="var(--hot)" font-size="11" text-anchor="middle" font-family="monospace">필드: 갇힘</text>`;
+  // 존재하는 우회(초록 점선, 위로 돌아감)
+  s+=`<path d="M${b.X(1)} ${b.Y(4)} L${b.X(3)} ${b.Y(1.2)} L${b.X(7)} ${b.Y(1.2)} L${b.X(9)} ${b.Y(4)}" fill="none" stroke="var(--good)" stroke-width="2.5" stroke-dasharray="6 4"/>`;
+  s+=`<text x="${b.X(5)}" y="${b.Y(1.2)-8}" fill="var(--good)" font-size="11" text-anchor="middle" font-family="monospace">실제로 길은 있다</text>`;
+  s+=`<circle cx="${b.X(1)}" cy="${b.Y(4)}" r="6" fill="var(--ink)"/>`;
+  document.getElementById('s3').innerHTML=S.svg(b,s,'빠름 ↔ 불완전');
+  document.getElementById('lab3').innerHTML=`👍 가볍고 즉각적(실시간 회피) · 👎 지역 최소에 갇힘(<b style="color:var(--hot)">완전성 없음</b>) — 길이 있어도 못 찾을 수 있어요.`;
+})();
+</script>
+</body>
+</html>

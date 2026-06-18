@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 · 격자의 한계 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--muted); min-width:96px;}
+  .ctl input[type=range]{flex:1; min-width:140px;}
+  .huge{font-family:'JetBrains Mono',monospace; font-size:clamp(22px,5vw,34px); font-weight:800; color:var(--hot); letter-spacing:-.02em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 3 · 격자를 넘어 · CH 06</div>
+    <h1>격자의 한계 — 잘게 쪼갤수록 무거워진다</h1>
+    <p class="intro">격자는 직관적이고 강력했지만, 두 가지 벽에 부딪혀요. 하나는 <b>해상도 딜레마</b> — 칸이 굵으면 좁은 길을 놓치거나 막아버리고, 잘면 칸이 폭발해요. 다른 하나는 더 무서운 <b>차원의 저주</b> — 로봇 관절이 하나 늘 때마다 칸 수가 <b>곱셈으로</b> 불어나, 팔 달린 로봇에선 우주의 원자 수보다 많은 칸이 필요해지죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 굵으면 놓친다</button>
+    <button data-s="1">01 · 계단처럼 각진다</button>
+    <button data-s="2">02 · 차원의 저주</button>
+    <button data-s="3">03 · 그래서 다른 길</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — Resolution Dilemma</span>
+    <h2>칸이 굵으면 — 있는 길도 막아버린다</h2>
+    <p class="lead">두 장애물 사이에 <b>좁은 통로</b>가 있어요. <b>칸 크기</b>를 바꿔보세요. 칸이 굵으면 통로에 걸친 칸이 통째로 <span style="color:var(--k)">막힘</span> 처리돼 — <b>실제론 지날 수 있는 길이 사라져요</b>. 잘게 쪼개야 통로가 살아나지만, 그만큼 칸 수가 늘죠.</p>
+    <div class="ctl"><label>칸 크기</label><input type="range" id="res0" min="5" max="22" step="1" value="8"><span class="big" id="res0v" style="min-width:90px"></span></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ "굵으면 길을 잃고, 잘면 무거워진다" — 격자의 첫 번째 딜레마예요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Staircase Paths</span>
+    <h2>격자 경로는 계단처럼 각진다</h2>
+    <p class="lead">격자는 정해진 방향(상하좌우, 혹은 대각선)으로만 움직여요. 그래서 <span style="color:var(--v)">격자 경로(보라)</span>는 비스듬한 길을 <b>계단 모양</b>으로 흉내 내요 — <span style="color:var(--good)">진짜 최단 직선(초록)</span>보다 길죠. 칸을 잘게 해도 계단이 작아질 뿐 <b>완전히 직선이 되진 않아요</b>.</p>
+    <div class="ctl"><label>칸 크기</label><input type="range" id="res1" min="4" max="16" step="1" value="7"><span class="big" id="res1v" style="min-width:90px"></span></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 격자는 방향이 <b>몇 개로 묶여</b> 있어요. 이 각진 경로를 펴는 게 나중의 "경로 다듬기"(CH11)예요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — The Curse of Dimensionality</span>
+    <h2>관절이 늘면 — 칸이 곱셈으로 폭발한다</h2>
+    <p class="lead">진짜 문제는 차원이에요. 한 축을 <b>k칸</b>으로 나누면, <b>차원이 하나 늘 때마다 전체 칸 수가 ×k</b>가 돼요(k의 거듭제곱). 평면 로봇은 2차원이라 견딜 만하지만, <b>관절 6개짜리 로봇 팔</b>은 6차원 — 칸 수가 상상 밖으로 커져요. 슬라이더로 직접 폭발시켜 보세요.</p>
+    <div class="ctl"><label>축당 칸 수 k</label><input type="range" id="kk" min="10" max="100" step="10" value="50"><span class="big" id="kkv" style="min-width:60px"></span></div>
+    <div class="ctl"><label>차원(관절 수)</label><input type="range" id="dim" min="1" max="8" step="1" value="2"><span class="big" id="dimv" style="min-width:60px"></span></div>
+    <div style="text-align:center; margin:14px 0 4px"><div style="font-size:12px;color:var(--muted);font-family:monospace">필요한 칸 수 ≈ k<sup id="dimsup">2</sup></div><div class="huge" id="cells">—</div></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 칸을 모두 만들기는커녕 <b>메모리에 담을 수조차</b> 없어요. 고차원에선 격자가 통째로 무너집니다.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — A Different Road</span>
+    <h2>그래서 — 공간을 다 만들지 않는다</h2>
+    <p class="lead">해법은 발상의 전환이에요. <b>온 공간을 칸으로 채우지 말고</b>, 필요한 곳만 다뤄요. 두 갈래가 있어요 — 목표·장애물을 <b>힘(필드)</b>으로 바꿔 굴러가게 하거나(다음 챕터), 공간에 <b>점을 띄엄띄엄 뿌려</b> 잇는 거예요(PART 4). 둘 다 "<b>전부 나누지 않는다</b>"는 점이 공통이죠.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 먼저 "힘으로 굴리는" 직관적인 방법부터. 다음 → <a href="07-potential.html" style="color:var(--q);font-weight:700">CH 07 · 포텐셜 필드</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 해상도·칸 수 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '06 · 격자의 한계');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+// 정규화 공간(0..1) 장애물·통로
+function gb(cols,rows,cs){ const ox=12,oy=12; return {cols,rows,cs,ox,oy,W:ox*2+cols*cs,H:oy*2+rows*cs,
+  gx:x=>ox+x*cs, gy:y=>oy+y*cs, cx:x=>ox+(x+0.5)*cs, cy:y=>oy+(y+0.5)*cs}; }
+function cell(b,x,y,fill,stroke,sw){ return `<rect x="${b.gx(x)+0.4}" y="${b.gy(y)+0.4}" width="${b.cs-0.8}" height="${b.cs-0.8}" fill="${fill}" stroke="${stroke||'var(--line)'}" stroke-width="${sw||.4}"/>`; }
+
+// ===== STEP 0: corridor lost at coarse resolution =====
+(function(){ const PXW=360,PXH=250;
+  // 실제 장애물(픽셀): 위블록, 아래블록, 사이 통로(틈 28px)
+  const corridorY0=111, corridorY1=139; // 통로 세로 범위
+  const obs=[{x:90,y:10,w:180,h:corridorY0-10},{x:90,y:corridorY1,w:180,h:PXH-10-corridorY1}];
+  function inObs(px,py){ return obs.some(o=>px>=o.x&&px<=o.x+o.w&&py>=o.y&&py<=o.y+o.h); }
+  function render(cs){ const cols=Math.floor(PXW/cs),rows=Math.floor(PXH/cs);
+    let s='',blocked=0,free=0,corridorOpen=true;
+    // 실제 장애물 윤곽(연한)
+    s+=obs.map(o=>`<rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" fill="none" stroke="var(--q)" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>`).join('');
+    for(let gy=0;gy<rows;gy++)for(let gx=0;gx<cols;gx++){ const cx0=gx*cs,cy0=gy*cs;
+      // 셀 중심이 장애물이면 막힘
+      const bl=inObs(cx0+cs/2,cy0+cs/2);
+      if(bl)blocked++;else free++;
+      s+=`<rect x="${cx0+0.4}" y="${cy0+0.4}" width="${cs-0.8}" height="${cs-0.8}" fill="${bl?'rgba(251,113,133,.28)':'rgba(123,156,255,.05)'}" stroke="${bl?'var(--k)':'var(--line)'}" stroke-width=".4"/>`; }
+    // 통로 살아있나: 통로 세로 중앙의 자유 칸이 좌→우로 연결되는지(간단판정: 통로 중앙줄 셀들이 모두 free)
+    const midY=(corridorY0+corridorY1)/2;
+    for(let gx=Math.floor(90/cs);gx<=Math.floor(270/cs);gx++){ if(inObs(gx*cs+cs/2, Math.floor(midY/cs)*cs+cs/2)){corridorOpen=false;break;} }
+    document.getElementById('s0').innerHTML=S.svg({W:PXW,H:PXH},s,'통로 ↔ 칸');
+    document.getElementById('res0v').textContent=cs+'px ('+cols+'×'+rows+')';
+    document.getElementById('lab0').innerHTML= corridorOpen
+      ? `통로 <b style="color:var(--good)">살아있음</b> ✓ — 자유 칸 ${free}개. (칸이 충분히 잘아 28px 틈이 보존됨)`
+      : `통로 <b style="color:var(--k)">막힘!</b> ✗ — 굵은 칸이 28px 틈을 통째로 삼켰어요. 실제론 지날 수 있는데도요.`; }
+  document.getElementById('res0').addEventListener('input',e=>render(+e.target.value)); render(8);
+})();
+
+// ===== STEP 1: staircase vs straight =====
+(function(){ const PXW=360,PXH=250; const A=[30,210],B=[330,40];
+  function render(cs){ const cols=Math.ceil(PXW/cs),rows=Math.ceil(PXH/cs);
+    // 격자 그리기(옅게)
+    let s='';
+    for(let gx=0;gx<=cols;gx++) s+=`<line x1="${gx*cs}" y1="0" x2="${gx*cs}" y2="${PXH}" stroke="var(--line)" stroke-width=".4" opacity=".5"/>`;
+    for(let gy=0;gy<=rows;gy++) s+=`<line x1="0" y1="${gy*cs}" x2="${PXW}" y2="${gy*cs}" stroke="var(--line)" stroke-width=".4" opacity=".5"/>`;
+    // 격자 경로: A→B를 칸 단위 계단으로 (Bresenham 유사: 각 칸 중심 잇기, 4방향)
+    const ax=Math.round(A[0]/cs),ay=Math.round(A[1]/cs),bx=Math.round(B[0]/cs),by=Math.round(B[1]/cs);
+    let path=[[ax,ay]],x=ax,y=ay; let guard=0;
+    while((x!==bx||y!==by)&&guard++<999){ if(x!==bx)x+=Math.sign(bx-x); else if(y!==by)y+=Math.sign(by-y); path.push([x,y]); }
+    let d=''; path.forEach((p,i)=>d+=(i?'L':'M')+(p[0]*cs+cs/2).toFixed(1)+' '+(p[1]*cs+cs/2).toFixed(1)+' ');
+    s+=`<path d="${d}" fill="none" stroke="var(--v)" stroke-width="3" stroke-linejoin="round"/>`;
+    s+=`<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" stroke="var(--good)" stroke-width="2.5" stroke-dasharray="6 4"/>`;
+    s+=`<circle cx="${A[0]}" cy="${A[1]}" r="6" fill="var(--good)"/><circle cx="${B[0]}" cy="${B[1]}" r="6" fill="var(--hot)"/>`;
+    // 길이 계산
+    let gridLen=0; for(let i=1;i<path.length;i++) gridLen+=Math.hypot((path[i][0]-path[i-1][0])*cs,(path[i][1]-path[i-1][1])*cs);
+    const straight=Math.hypot(B[0]-A[0],B[1]-A[1]);
+    document.getElementById('s1').innerHTML=S.svg({W:PXW,H:PXH},s,'계단 vs 직선');
+    document.getElementById('res1v').textContent=cs+'px';
+    document.getElementById('lab1').innerHTML=`격자 경로(보라) <b style="color:var(--v)">${Math.round(gridLen)}</b> vs 진짜 직선(초록) <b style="color:var(--good)">${Math.round(straight)}</b> → <b>${((gridLen/straight-1)*100).toFixed(0)}%</b> 더 길어요.`; }
+  document.getElementById('res1').addEventListener('input',e=>render(+e.target.value)); render(7);
+})();
+
+// ===== STEP 2: curse of dimensionality =====
+(function(){ let k=50,dim=2;
+  // 비교 기준
+  const ATOMS=1e80; // 관측 우주 원자 수 어림
+  function fmtBig(n){ if(n<1e4) return Math.round(n).toLocaleString('en-US');
+    const e=Math.floor(Math.log10(n)); const m=n/Math.pow(10,e); return `${m.toFixed(1)} × 10^${e}`; }
+  function render(){ document.getElementById('kkv').textContent='k='+k; document.getElementById('dimv').textContent=dim+(dim===1?'D':'D'); document.getElementById('dimsup').textContent=dim;
+    const cells=Math.pow(k,dim);
+    document.getElementById('cells').textContent=fmtBig(cells)+' 칸';
+    let cmp='';
+    if(cells<1e6) cmp='메모리에 거뜬히 들어가요.';
+    else if(cells<1e10) cmp='꽤 무겁지만 아직 가능은 해요.';
+    else if(cells<1e15) cmp='일반 컴퓨터 메모리를 넘어서기 시작해요.';
+    else if(cells<1e40) cmp='지구의 모든 컴퓨터로도 못 담아요.';
+    else cmp=`관측 가능한 우주의 원자 수(약 10^80)에 견줄 만큼 커요.`;
+    document.getElementById('lab2').innerHTML=`축당 ${k}칸 · ${dim}차원 → <b style="color:var(--hot)">${fmtBig(cells)}</b>칸. ${cmp}`; }
+  document.getElementById('kk').addEventListener('input',e=>{k=+e.target.value; render();});
+  document.getElementById('dim').addEventListener('input',e=>{dim=+e.target.value; render();}); render();
+})();
+
+// ===== STEP 3: two roads (decorative concept) =====
+(function(){ const PXW=360,PXH=210;
+  // 왼쪽: 필드(화살표 등고), 오른쪽: 흩뿌린 점+간선
+  let s='';
+  // 구분선
+  s+=`<line x1="${PXW/2}" y1="10" x2="${PXW/2}" y2="${PXH-10}" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>`;
+  // 왼쪽 필드: 작은 화살표가 오른쪽 아래 목표로 수렴
+  const gx0=20,gx1=160,gy0=30,gy1=PXH-20; const goalL=[150,PXH-30];
+  for(let x=gx0;x<=gx1;x+=26)for(let y=gy0;y<=gy1;y+=26){ const dx=goalL[0]-x,dy=goalL[1]-y,d=Math.hypot(dx,dy)||1; const ux=dx/d,uy=dy/d,len=9;
+    s+=`<line x1="${x}" y1="${y}" x2="${(x+ux*len).toFixed(1)}" y2="${(y+uy*len).toFixed(1)}" stroke="var(--q)" stroke-width="1.4" opacity=".7"/>`;
+    s+=`<circle cx="${(x+ux*len).toFixed(1)}" cy="${(y+uy*len).toFixed(1)}" r="1.5" fill="var(--q)"/>`; }
+  s+=`<circle cx="${goalL[0]}" cy="${goalL[1]}" r="6" fill="var(--hot)"/>`;
+  s+=`<text x="90" y="22" fill="var(--q)" font-size="12" text-anchor="middle" font-family="monospace">힘(필드)으로 굴리기</text>`;
+  // 오른쪽: 흩뿌린 점 + 간선
+  const pts=[[210,40],[250,70],[300,50],[340,90],[230,120],[280,140],[320,160],[260,180],[330,130],[300,100]];
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){ if(Math.hypot(pts[i][0]-pts[j][0],pts[i][1]-pts[j][1])<60) s+=`<line x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${pts[j][0]}" y2="${pts[j][1]}" stroke="var(--v)" stroke-width="1" opacity=".5"/>`; }
+  pts.forEach(p=>s+=`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="var(--v)"/>`);
+  s+=`<text x="285" y="22" fill="var(--v)" font-size="12" text-anchor="middle" font-family="monospace">점 뿌려 잇기</text>`;
+  document.getElementById('s3').innerHTML=S.svg({W:PXW,H:PXH},s,'두 갈래');
+  document.getElementById('lab3').innerHTML=`공간을 <b>전부 나누지 않는</b> 두 갈래 — <span style="color:var(--q)">필드(CH07)</span>와 <span style="color:var(--v)">샘플링(PART 4)</span>.`;
+})();
+</script>
+</body>
+</html>
