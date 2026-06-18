@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .hero{text-align:center; padding:30px 0 10px;}
+  .hero .tag{font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.25em; text-transform:uppercase; color:var(--q);}
+  .hero h1{font-size:clamp(30px,6vw,52px); font-weight:800; letter-spacing:-.03em; margin:14px 0 12px; line-height:1.05;
+    background:linear-gradient(100deg,#fff,#9bb6ff 55%,var(--v)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .hero p{color:var(--muted); max-width:660px; margin:0 auto; font-size:16px;}
+  .seclabel{font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--muted); margin:46px 0 16px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px;}
+  .ccard{display:block; text-decoration:none; background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    padding:22px; transition:.22s; position:relative; overflow:hidden;}
+  .ccard::before{content:''; position:absolute; inset:0 auto 0 0; width:4px; background:var(--accent,var(--q)); opacity:.8;}
+  .ccard:hover{transform:translateY(-4px); border-color:var(--accent,var(--q)); box-shadow:0 14px 36px rgba(0,0,0,.35);}
+  .ccard .num{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent,var(--q)); font-weight:700;}
+  .ccard h3{margin:8px 0 8px; font-size:19px; color:var(--ink); letter-spacing:-.01em;}
+  .ccard p{margin:0; font-size:13.5px; color:var(--muted); line-height:1.6;}
+  .ccard .chips{margin-top:14px; display:flex; gap:6px; flex-wrap:wrap;}
+  .ccard .chip{font-family:'JetBrains Mono',monospace; font-size:10px; padding:3px 8px; border-radius:6px;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--muted);}
+  .foot{margin-top:60px;}
+  .ccard.soon{opacity:.5; cursor:not-allowed;}
+  .ccard.soon:hover{transform:none; border-color:var(--line); box-shadow:none;}
+  .ccard.soon::after{content:'🚧 준비 중'; position:absolute; top:12px; right:14px; font-family:'JetBrains Mono',monospace;
+    font-size:10px; color:var(--hot); background:rgba(251,191,36,.12); border:1px solid var(--hot); border-radius:6px; padding:2px 7px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="tag">Motion Planning, 눈으로 보기</div>
+    <h1>모션 플래닝, 눈으로 보기</h1>
+    <p>로봇은 "<b>어디로, 어떻게</b> 갈까"를 스스로 정해야 해요 — 장애물을 피해 목적지까지. <b>격자 탐색·A\*·포텐셜 필드·RRT·SLAM 너머의 경로 계획</b>을, 수식 대신 <b>탐색이 퍼지고 길이 그려지는 걸 직접 만지며</b> 익히는 0번 입문 + 15챕터.</p>
+  </div>
+
+  <a href="00-intro.html" style="display:block;text-decoration:none;margin:8px 0 4px;padding:18px 22px;border-radius:16px;background:linear-gradient(100deg,rgba(251,191,36,.12),rgba(55,189,248,.08));border:1px solid var(--hot);transition:.2s">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--hot);font-weight:700">👋 처음이세요?</div>
+    <div style="font-size:18px;font-weight:800;color:var(--ink);margin:6px 0 4px">0번 — 왜 "계획"이 필요한가 (수식 없는 5분 입문)</div>
+    <div style="font-size:13.5px;color:var(--muted)">목표로 직진하면 벽에 막혀요. 돌아가는 길을 찾는 게 계획. "길을 찾긴 하나(완전성)/그게 최선인가(최적성)"라는 두 잣대도 함께. 코스 지도도. →</div>
+  </a>
+  <p class="note" style="margin:6px 2px 0;color:var(--faint);font-size:13px">📚 처음이라면 <b>0번부터 순서대로</b>. 수식·기호는 <b>몰라도 돼요</b> — 탐색이 퍼지고 경로가 다듬어지는 걸 직접 보며 익혀요. 척추는 <b>설정공간(01)→BFS(03)→A\*(05)→포텐셜필드(07)→RRT(09)→리플래닝(14)</b>. <b>추정·제어 트랙</b>과 "어디 있나→어디로→어떻게"로 이어져요.</p>
+
+  <div class="seclabel">PART 1 · 공간과 문제</div>
+  <div class="cards">
+    <a class="ccard" href="01-cspace.html"><div class="num">01</div><h3>설정공간 (C-space)</h3><p>로봇을 점으로, 장애물을 로봇 크기만큼 부풀려 — 길찾기가 갑자기 쉬워진다.</p><div class="chips"><span class="chip">C-space</span></div></a>
+    <a class="ccard" href="02-graph.html"><div class="num">02</div><h3>길찾기 = 그래프 탐색</h3><p>연속 공간을 격자로 쪼개고 이웃을 잇는다. 길찾기가 그래프 문제로 바뀐다.</p><div class="chips"><span class="chip">grid</span></div></a>
+  </div>
+
+  <div class="seclabel">PART 2 · 격자 탐색</div>
+  <div class="cards">
+    <a class="ccard" href="03-bfs.html"><div class="num">03</div><h3>너비우선 BFS</h3><p>출발점에서 물처럼 사방으로 차오른다. 칸 수로 가장 가까운 길.</p><div class="chips"><span class="chip">BFS</span></div></a>
+    <a class="ccard" href="04-dijkstra.html"><div class="num">04</div><h3>다익스트라</h3><p>늪·언덕처럼 칸마다 비용이 다를 때, 비용이 가장 적은 길.</p><div class="chips"><span class="chip">cost</span></div></a>
+    <a class="ccard" href="05-astar.html"><div class="num">05</div><h3>A* — 휴리스틱</h3><p>"목표 쪽 냄새"로 덜 헤맨다. 탐욕은 빠르나 위험, weighted로 빠름↔최적 조절.</p><div class="chips"><span class="chip">A*</span><span class="chip">heuristic</span></div></a>
+  </div>
+
+  <div class="seclabel">PART 3 · 격자를 넘어</div>
+  <div class="cards">
+    <a class="ccard" href="06-grid-limits.html"><div class="num">06</div><h3>격자의 한계</h3><p>해상도 vs 정확도, 그리고 차원의 저주 — 관절이 늘면 칸이 폭발한다.</p><div class="chips"><span class="chip">차원의 저주</span></div></a>
+    <a class="ccard" href="07-potential.html"><div class="num">07</div><h3>포텐셜 필드</h3><p>목표는 끌어당기고 장애물은 밀어낸다. 경사 따라 굴러가다 — 지역최소 함정.</p><div class="chips"><span class="chip">potential</span></div></a>
+  </div>
+
+  <div class="seclabel">PART 4 · 샘플링 기반</div>
+  <div class="cards">
+    <a class="ccard" href="08-prm.html"><div class="num">08</div><h3>PRM</h3><p>공간에 점을 뿌리고 이어 "길 그물(로드맵)"을 만든다. 여러 목적지에 재사용.</p><div class="chips"><span class="chip">roadmap</span></div></a>
+    <a class="ccard" href="09-rrt.html"><div class="num">09</div><h3>RRT</h3><p>나무가 무작위 표본을 향해 덩굴처럼 자라 좁은 통로도 뚫는다.</p><div class="chips"><span class="chip">RRT</span></div></a>
+    <a class="ccard" href="10-rrt-star.html"><div class="num">10</div><h3>RRT*</h3><p>가지를 다시 잇는다(rewire). 표본이 쌓일수록 경로가 점점 짧아진다.</p><div class="chips"><span class="chip">RRT*</span></div></a>
+  </div>
+
+  <div class="seclabel">PART 5 · 실전</div>
+  <div class="cards">
+    <a class="ccard" href="11-smoothing.html"><div class="num">11</div><h3>경로 다듬기</h3><p>들쭉날쭉 계단 경로를 지름길로 펴서 매끈하게.</p><div class="chips"><span class="chip">shortcut</span></div></a>
+    <a class="ccard" href="12-trajectory.html"><div class="num">12</div><h3>궤적 최적화</h3><p>경로에 시간을 입혀 — 고무줄처럼 부드럽고 빠르게(곡률·속도).</p><div class="chips"><span class="chip">trajectory</span></div></a>
+    <a class="ccard" href="13-carlike.html"><div class="num">13</div><h3>차처럼 움직이기</h3><p>제자리 회전 불가·최소 회전반경. 직진+커브 레고로 만드는 길(Dubins).</p><div class="chips"><span class="chip">Dubins</span></div></a>
+    <a class="ccard" href="14-replanning.html"><div class="num">14</div><h3>움직이는 장애물·리플래닝</h3><p>세상이 바뀌면 바뀐 부분만 다시. 추정·제어와 실시간 루프.</p><div class="chips"><span class="chip">replanning</span></div></a>
+    <a class="ccard" href="15-beyond.html"><div class="num">15</div><h3>너머에는</h3><p>코스트맵·any-angle·D*·학습 기반, 그리고 경로추종(제어)으로.</p><div class="chips"><span class="chip">→제어</span></div></a>
+  </div>
+
+  <p class="foot" style="margin-top:30px">// 모션 플래닝 핵심을 직접 만든 비영리 인터랙티브 학습 자료 · 모든 탐색·경로는 브라우저에서 실시간 계산</p>
+</div>
+
+<script>
+(function(){
+  const READY = new Set(['00-intro.html']);
+  const PAL=['var(--hot)','var(--q)','var(--v)','var(--good)','var(--pink)','var(--blue)'];
+  document.querySelectorAll('a.ccard').forEach((a,i)=>{ a.style.setProperty('--accent', PAL[i%PAL.length]); if(READY.has(a.getAttribute('href'))) return; a.classList.add('soon'); a.addEventListener('click', e=>e.preventDefault()); });
+})();
+</script>
+</body>
+</html>

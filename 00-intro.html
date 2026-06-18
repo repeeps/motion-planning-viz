@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0번 입문 · 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .uc{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:6px 0 4px;}
+  .uc .u{background:var(--panel-2); border:1px solid var(--line); border-radius:13px; padding:14px;}
+  .uc .u .e{font-size:24px;} .uc .u h4{margin:6px 0 5px; font-size:14px;} .uc .u p{margin:0; font-size:12.5px; color:var(--muted); line-height:1.55;}
+  .cmap{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+  .cmap a{display:flex; gap:12px; align-items:center; text-decoration:none; background:var(--panel-2); border:1px solid var(--line);
+    border-left:3px solid var(--accent,var(--q)); border-radius:11px; padding:11px 14px; transition:.15s;}
+  .cmap a:hover{transform:translateX(3px); border-color:var(--accent,var(--q));}
+  .cmap .n{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent,var(--q)); font-weight:700; min-width:64px;}
+  .cmap .t{color:var(--ink); font-size:14px; font-weight:700;} .cmap .d{color:var(--muted); font-size:12.5px;}
+  .scene{cursor:grab;} .big{font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--ink); margin:8px 2px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">시작하기 전에 · 5분 입문</div>
+    <h1>왜 "계획"이 필요한가</h1>
+    <p class="intro">로봇·드론·자율주행차는 "내가 <b>어디</b> 있는지"(추정)를 알고, "<b>어떻게</b> 움직일지"(제어)를 실행해요. 그 사이에 빠진 게 있어요 — <b>"어디로 갈까", 즉 장애물을 피해 목적지까지 가는 길을 찾는 일(계획)</b>이에요. 목표를 향해 그냥 <b>직진하면 벽에 박혀요</b>. 돌아가는 길을 영리하게 찾아내는 게 모션 플래닝이고, 그 길이 "<b>있긴 한가(완전성)</b>"와 "<b>그게 최선인가(최적성)</b>"를 따져요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 직진은 막힌다</button>
+    <button data-s="1">01 · 돌아가면 된다</button>
+    <button data-s="2">02 · 두 가지 잣대</button>
+    <button data-s="3">03 · 코스 지도</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — A Straight Line Fails</span>
+    <h2>목표로 직진하면 벽에 박힌다</h2>
+    <p class="lead"><span style="color:var(--good)">출발(초록)</span>에서 <span style="color:var(--hot)">목표(주황)</span>로 <b>곧장</b> 이으면(점선) — 가운데 <b>장애물</b>을 뚫고 지나가요(빨강 = 충돌). <b>목표를 마우스로 끌어</b> 옮겨보세요. 장애물 뒤에 있는 한, 직진으론 절대 못 가요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ "최단 거리는 직선"이라는 상식이 장애물 앞에선 무너져요. 그래서 <b>돌아가는 길</b>을 찾아야 하죠 — 그게 계획이에요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Go Around</span>
+    <h2>돌아가는 길을 찾는 것 = 계획</h2>
+    <p class="lead">직진이 막히면 <b>장애물을 우회</b>하면 돼요. <b>길 찾기</b>를 누르면, 충돌 없이 출발에서 목표까지 잇는 <span style="color:var(--good)">경로(초록)</span>가 그려져요. 사람에겐 당연해 보이지만 — 로봇에겐 "<b>어느 점들을 어떤 순서로 지나야 안 부딪히고 목적지에 닿나</b>"를 푸는 진짜 문제예요.</p>
+    <div class="scene" id="s1"></div>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="plan1">🧭 길 찾기</button> <button class="btn" id="reset1">↺ 리셋</button></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 이 코스 내내 "그 길을 <b>어떻게</b> 찾나"를 봐요 — 격자를 훑고(BFS·A\*), 힘으로 밀고(포텐셜), 점을 뿌려(RRT) 잇는 여러 방법으로요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Two Yardsticks</span>
+    <h2>"찾긴 하나" 그리고 "최선인가"</h2>
+    <p class="lead">길을 평가하는 두 잣대가 있어요. <b>완전성</b>: 길이 있으면 <b>반드시 찾아내나?</b> · <b>최적성</b>: 찾은 길이 <b>가장 짧은(싼) 길인가?</b> 아래 두 경로는 <b>둘 다 충돌 없이 목표에 닿지만</b>(완전성 ✓), 길이가 달라요. <b>전환</b>으로 비교하세요.</p>
+    <div class="scene" id="s2"></div>
+    <div class="row" style="margin:8px 0"><button class="btn" id="toggle2">크게 돌기 ↔ 짧게</button></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 어떤 방법은 "길만 찾으면 OK", 어떤 방법은 "최단까지" 보장해요. 이 둘(완전성·최적성)이 알고리즘을 고르는 기준이에요 — 코스 내내 따라다녀요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Course Map</span>
+    <h2>코스 지도 — 15챕터</h2>
+    <p class="lead">공간을 다루는 법(설정공간) → 격자 탐색(BFS·A\*) → 연속 공간(필드·샘플링) → 실전(다듬기·차·동적)으로 쌓아요. 아래는 <b>핵심 흐름</b>이고 전체 15챕터는 <a href="index.html" style="color:var(--q)">목차</a>에.</p>
+    <div class="cmap" id="cmap"></div>
+    <p class="note" style="margin-top:14px">→ 준비됐으면 <a href="01-cspace.html" style="color:var(--q);font-weight:700">CH 01 · 설정공간</a>부터! <span style="color:var(--faint)">(추정[어디 있나]·제어[어떻게]와 "어디로?"로 이어져요)</span></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 모든 탐색·경로는 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '0번 · 입문');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+const OBS=[{x:5,y:3,r:1.5}];
+function board(){ return S.board({W:520,H:320,s:48,ox:18,oy:300}); } // x:0..10, y:0..6
+function obsSVG(b){ return OBS.map(o=>`<circle cx="${b.X(o.x)}" cy="${b.Y(o.y)}" r="${o.r*b.s}" fill="rgba(251,113,133,.13)" stroke="var(--k)" stroke-width="1.5"/>`).join(''); }
+function dot(b,p,c,r,lab){ let s=`<circle cx="${b.X(p[0])}" cy="${b.Y(p[1])}" r="${r||6}" fill="${c}"/>`; if(lab) s+=`<text x="${b.X(p[0])}" y="${b.Y(p[1])-11}" fill="${c}" font-size="11" text-anchor="middle" font-family="monospace">${lab}</text>`; return s; }
+function pathSVG(b,pts,c,w,dash){ let d=''; for(let i=0;i<pts.length;i++) d+=(i?'L':'M')+b.X(pts[i][0]).toFixed(1)+' '+b.Y(pts[i][1]).toFixed(1)+' '; return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w||3}" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round"/>`; }
+const START=[1,3];
+
+// ===== STEP 0: straight line collides =====
+(function(){ const b=board(); let goal=[9,3];
+  function render(){ const hit=P.segHit(START,goal,OBS);
+    let s=obsSVG(b)+pathSVG(b,[START,goal],hit?'var(--k)':'var(--good)',3,'6 5')+dot(b,START,'var(--good)',7,'출발')+dot(b,goal,'var(--hot)',7,'목표');
+    document.getElementById('s0').innerHTML=S.svg(b,s,'직진');
+    document.getElementById('lab0').innerHTML= hit?`직선 경로가 장애물을 <b style="color:var(--k)">통과 — 충돌!</b> 직진 불가.`:`직선이 장애물을 비껴갔어요. (목표를 장애물 뒤로 끌어보세요)`; }
+  function px(e){ const sv=document.querySelector('#s0 svg'); if(!sv)return null; const r=sv.getBoundingClientRect(); return [ (e.clientX-r.left)/r.width*b.W/b.s - b.ox/b.s, -((e.clientY-r.top)/r.height*b.H - b.oy)/b.s ]; }
+  let drag=false; const el=document.getElementById('s0');
+  el.addEventListener('pointerdown',e=>{drag=true;const p=px(e);if(p){goal=[VZ.clamp(p[0],0.5,9.7),VZ.clamp(p[1],0.3,5.7)];render();}});
+  el.addEventListener('pointermove',e=>{if(!drag)return;const p=px(e);if(p){goal=[VZ.clamp(p[0],0.5,9.7),VZ.clamp(p[1],0.3,5.7)];render();}});
+  const up=()=>drag=false; el.addEventListener('pointerup',up); el.addEventListener('pointerleave',up);
+  render();
+})();
+
+// ===== STEP 1: planned detour =====
+(function(){ const b=board(); const GOAL=[9,3]; const detour=[[1,3],[3,5],[5,5.2],[7,5],[9,3]]; let frac=0;
+  function render(){ let s=obsSVG(b);
+    if(frac>0) s+=pathSVG(b,detour.slice(0,Math.max(2,Math.round(detour.length*frac))),'var(--good)',3.5);
+    else s+=pathSVG(b,[START,GOAL],'var(--k)',2,'6 5');
+    s+=dot(b,START,'var(--good)',7,'출발')+dot(b,GOAL,'var(--hot)',7,'목표');
+    document.getElementById('s1').innerHTML=S.svg(b,s,'우회 경로');
+    document.getElementById('lab1').innerHTML= frac>=1?`충돌 없는 경로를 찾았어요! 길이 ${fmt(P.pathLen(detour),1)} — 이게 "계획"의 결과예요.`: frac>0?'길을 그리는 중…':'직진(빨강 점선)은 막혀요. "길 찾기"를 눌러보세요.'; }
+  let tt=0; const sim=S.loop(dt=>{ tt+=dt; frac=Math.min(1,tt/1.2); render(); if(frac>=1)sim.stop(); });
+  document.getElementById('plan1').onclick=()=>{ if(frac>=1){tt=0;frac=0;} sim.start(); };
+  document.getElementById('reset1').onclick=()=>{ sim.stop(); tt=0; frac=0; render(); };
+  render();
+})();
+
+// ===== STEP 2: completeness vs optimality =====
+(function(){ const b=board(); const GOAL=[9,3];
+  const longP=[[1,3],[1.5,5.4],[4,5.6],[6.5,5.6],[8.8,5.2],[9,3]];
+  const shortP=[[1,3],[3.2,4.7],[6.8,4.7],[9,3]];
+  let big=true;
+  function render(){ const p=big?longP:shortP;
+    let s=obsSVG(b)+pathSVG(b, big?shortP:longP, 'var(--faint)',1.6)+pathSVG(b,p,'var(--good)',3.5)+dot(b,START,'var(--good)',7,'출발')+dot(b,GOAL,'var(--hot)',7,'목표');
+    document.getElementById('s2').innerHTML=S.svg(b,s,'두 경로');
+    document.getElementById('lab2').innerHTML=`${big?'크게 도는 길':'짧은 길'} · 길이 <b>${fmt(P.pathLen(p),1)}</b> (짧은 길 ${fmt(P.pathLen(shortP),1)} vs 크게 ${fmt(P.pathLen(longP),1)}) — 둘 다 도착하지만(완전성 ✓), ${big?'더 길어요(최적 ✗)':'더 짧아요(최적 ✓)'}`; }
+  document.getElementById('toggle2').onclick=()=>{ big=!big; render(); };
+  render();
+})();
+
+// ===== STEP 3: course map =====
+(function(){ const PAL=['var(--hot)','var(--q)','var(--v)','var(--good)','var(--pink)','var(--blue)'];
+  const ch=[['01','설정공간','로봇→점·부풀리기','01-cspace.html'],['03','BFS','물처럼 팽창','03-bfs.html'],
+    ['05','A*','휴리스틱으로 똑똑하게','05-astar.html'],['07','포텐셜 필드','끌림+밀어냄·함정','07-potential.html'],
+    ['09','RRT','덩굴처럼 뻗기','09-rrt.html'],['14','리플래닝','세상이 바뀌면 다시','14-replanning.html']];
+  document.getElementById('cmap').innerHTML = ch.map((c,i)=>
+    `<a href="${c[3]}" style="--accent:${PAL[i%PAL.length]}"><span class="n">CH ${c[0]}</span><span><span class="t">${c[1]}</span> &nbsp;<span class="d">${c[2]}</span></span></a>`).join('');
+})();
+</script>
+</body>
+</html>
