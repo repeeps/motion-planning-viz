@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · 너비우선 BFS — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--muted); min-width:84px;}
+  .ctl input[type=range]{flex:1; min-width:140px;}
+  .leg{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0;}
+  .leg i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-1px; margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 2 · 격자 탐색 · CH 03</div>
+    <h1>너비우선 탐색 (BFS) — 물처럼 차오른다</h1>
+    <p class="intro">출발 칸에 물을 한 방울 떨어뜨렸다고 상상해요. 물은 <b>가까운 칸부터 한 겹씩</b> 사방으로 퍼져요 — 1걸음 거리 칸을 모두 적신 뒤에야 2걸음 칸으로 넘어가죠. 이렇게 <b>"가까운 순서대로" 빠짐없이 퍼뜨리는</b> 게 너비우선 탐색이에요. 목표에 물이 <b>처음 닿는 순간</b>, 그 경로가 <b>칸 수로 가장 짧은 길</b>이 보장돼요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 물방울 비유</button>
+    <button data-s="1">01 · 한 겹씩 퍼진다</button>
+    <button data-s="2">02 · 닿는 순간이 최단</button>
+    <button data-s="3">03 · 공평하지만 많이 본다</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — A Drop of Water</span>
+    <h2>출발점에서 물처럼 번진다</h2>
+    <p class="lead">장애물 없는 빈 격자예요. <b>퍼뜨리기</b>를 누르면 출발 칸에서 <b>동심원처럼 한 겹씩</b> 물이 차올라요. 같은 색 = <b>출발에서 같은 걸음 수</b>. 가까운 칸을 <b>모두</b> 적신 다음에야 다음 겹으로 가는 게 핵심이에요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go0">💧 퍼뜨리기</button> <button class="btn" id="rst0">↺ 리셋</button></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ "가까운 칸 먼저, 빠짐없이" — 이 순서가 BFS의 전부예요. 색은 출발로부터의 걸음 수(거리)고요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Wave Around Walls</span>
+    <h2>벽을 만나면 둘러서 퍼진다</h2>
+    <p class="lead">이번엔 장애물이 있어요. 물결은 벽에 막히면 <b>옆으로 돌아서</b> 계속 퍼져요. <b>속도</b>를 조절하며 <b>퍼뜨리기</b>를 눌러, 물결(프런티어)이 어떻게 벽을 감싸며 나아가는지 보세요. 색이 진할수록 출발에서 먼 칸이에요.</p>
+    <div class="ctl"><label>속도</label><input type="range" id="spd" min="1" max="10" step="1" value="5"></div>
+    <div class="leg"><span><i style="background:rgb(40,90,230)"></i>가까움</span><span><i style="background:rgb(150,120,115)"></i>중간</span><span><i style="background:rgb(255,90,0)"></i>멈</span><span><i style="background:var(--good)"></i>출발</span><span><i style="background:var(--hot)"></i>목표</span></div>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go1">💧 퍼뜨리기</button> <button class="btn" id="rst1">↺ 리셋</button></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — First Touch = Shortest</span>
+    <h2>목표에 처음 닿는 순간이 최단</h2>
+    <p class="lead">물결이 목표에 <b>처음 닿으면</b> 멈춰요. 거기서 "<b>어느 칸에서 왔는지</b>"를 거꾸로 따라가면 경로가 나와요(초록 선). BFS는 가까운 순서로 퍼지니까, <b>처음 닿은 그 길이 칸 수로 가장 짧은 길</b>이에요 — 더 짧은 길이 있었다면 물이 먼저 그쪽으로 닿았겠죠.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go2">💧 찾기</button> <button class="btn" id="rst2">↺ 리셋</button></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ "처음 닿음 = 최단"은 <b>모든 걸음의 비용이 같을 때</b>만 성립해요. 늪처럼 칸마다 비용이 다르면? 다음 챕터(다익스트라)에서요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Fair but Exhaustive</span>
+    <h2>공평하지만 — 너무 많이 들여다본다</h2>
+    <p class="lead">BFS는 목표 방향을 <b>전혀 모른 채</b> 사방으로 똑같이 퍼져요. 그래서 목표가 어느 쪽이든 <b>최단을 보장</b>하지만, 그 대가로 <b>엉뚱한 방향 칸까지 잔뜩</b> 들여다봐요. 아래는 BFS가 <span style="color:var(--v)">탐색한 칸(보라)</span>과 <span style="color:var(--good)">최종 경로(초록)</span>예요. 탐색한 칸이 경로보다 훨씬 많죠.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ "목표 쪽으로 더 영리하게 가면 덜 헤맬 텐데" — 그게 <a href="05-astar.html" style="color:var(--q);font-weight:700">A*</a>의 아이디어예요. 그 전에, 칸마다 비용이 다른 경우 → 다음 <a href="04-dijkstra.html" style="color:var(--q);font-weight:700">CH 04 · 다익스트라</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 탐색 순서·경로 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '03 · BFS');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+function gridBoard(cols,rows,cs){ const ox=12,oy=12; return {cols,rows,cs,ox,oy,W:ox*2+cols*cs,H:oy*2+rows*cs,
+  gx:x=>ox+x*cs, gy:y=>oy+y*cs, cx:x=>ox+(x+0.5)*cs, cy:y=>oy+(y+0.5)*cs}; }
+function cellRect(b,x,y,fill,stroke,sw){ return `<rect x="${b.gx(x)+0.5}" y="${b.gy(y)+0.5}" width="${b.cs-1}" height="${b.cs-1}" rx="2" fill="${fill}" stroke="${stroke||'var(--line)'}" stroke-width="${sw||.5}"/>`; }
+// 거리(걸음 수)에 따른 색
+function distColor(d,maxD){ return P.heatColor(maxD>0?d/maxD:0); }
+// BFS로 came/dist 같이 계산 (애니용 order + 각 칸 거리)
+function bfsFull(g,s){ const dist=new Map([[P.key(s[0],s[1]),0]]); const came=new Map(); const order=[]; const q=[s]; let qi=0;
+  while(qi<q.length){ const [x,y]=q[qi++]; const k=P.key(x,y); order.push([x,y,dist.get(k)]);
+    for(const[nx,ny] of neigh(g,x,y)){ const nk=P.key(nx,ny); if(dist.has(nk))continue; dist.set(nk,dist.get(k)+1); came.set(nk,k); q.push([nx,ny]); } }
+  return {dist,came,order}; }
+function neigh(g,x,y){ const r=[]; for(const[dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx,ny=y+dy; if(!P.blocked(g,nx,ny)) r.push([nx,ny]); } return r; }
+function backtrack(came,s,t){ let path=[],c=P.key(t[0],t[1]); if(!came.has(c)&&!(t[0]===s[0]&&t[1]===s[1]))return []; while(c){ const [x,y]=c.split(',').map(Number); path.unshift([x,y]); if(x===s[0]&&y===s[1])break; c=came.get(c); } return path; }
+
+// ===== STEP 0: open grid ripple =====
+(function(){ const cols=15,rows=10,cs=20,b=gridBoard(cols,rows,cs); const g=P.makeGrid(cols,rows,false);
+  const S0=[7,5]; const full=bfsFull(g,S0); const maxD=Math.max(...full.order.map(o=>o[2]));
+  let shown=0,timer=null;
+  function render(){ let s='';
+    for(let y=0;y<rows;y++)for(let x=0;x<cols;x++) s+=cellRect(b,x,y,'rgba(123,156,255,.05)');
+    for(let i=0;i<shown;i++){ const [x,y,d]=full.order[i]; s+=cellRect(b,x,y,distColor(d,maxD),'rgba(0,0,0,.15)',.5); }
+    s+=`<circle cx="${b.cx(S0[0])}" cy="${b.cy(S0[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s0').innerHTML=S.svg({W:b.W,H:b.H},s,'물결');
+    const curD = shown>0?full.order[shown-1][2]:0;
+    document.getElementById('lab0').innerHTML= shown>=full.order.length?`전부 적심 — 같은 색은 출발에서 같은 걸음 수. 가까운 겹부터 차례로 퍼졌어요.`:`적신 칸 ${shown} · 현재 물결: <b>${curD}걸음</b> 거리`; }
+  function play(){ if(timer)clearInterval(timer); shown=0;
+    timer=setInterval(()=>{ shown=Math.min(shown+4,full.order.length); render(); if(shown>=full.order.length)clearInterval(timer); },40); }
+  document.getElementById('go0').onclick=play;
+  document.getElementById('rst0').onclick=()=>{ if(timer)clearInterval(timer); shown=0; render(); };
+  render();
+})();
+
+// 장애물 격자 (Step1·2·3 공용 배치)
+function wallGrid(cols,rows){ const g=P.makeGrid(cols,rows,false);
+  const walls=[[4,1],[4,2],[4,3],[4,4],[4,5],[4,6],[4,7],[8,2],[8,3],[8,4],[8,5],[8,6],[8,7],[8,8],[11,0],[11,1],[11,2],[11,3],[11,4]];
+  walls.forEach(([x,y])=>g.walls.add(P.key(x,y))); return g; }
+const GC=15,GR=10,GCS=20, ST=[1,5], GO=[13,4];
+
+// ===== STEP 1: wave around walls =====
+(function(){ const b=gridBoard(GC,GR,GCS); const g=wallGrid(GC,GR);
+  const full=bfsFull(g,ST); const maxD=Math.max(...full.order.map(o=>o[2]));
+  let shown=0,timer=null,spd=5;
+  function render(){ let s='';
+    for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const w=g.walls.has(P.key(x,y));
+      s+=cellRect(b,x,y,w?'rgba(123,156,255,.16)':'rgba(123,156,255,.05)',w?'var(--q)':'var(--line)',w?1:.5); }
+    for(let i=0;i<shown;i++){ const [x,y,d]=full.order[i]; s+=cellRect(b,x,y,distColor(d,maxD),'rgba(0,0,0,.15)',.5); }
+    s+=`<circle cx="${b.cx(ST[0])}" cy="${b.cy(ST[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    s+=`<circle cx="${b.cx(GO[0])}" cy="${b.cy(GO[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s1').innerHTML=S.svg({W:b.W,H:b.H},s,'물결 vs 벽');
+    document.getElementById('lab1').innerHTML= shown>=full.order.length?`전부 적심 — 물결이 벽을 <b>둘러서</b> 퍼졌어요.`:`적신 칸 ${shown} / ${full.order.length}`; }
+  function play(){ if(timer)clearInterval(timer); shown=0;
+    timer=setInterval(()=>{ shown=Math.min(shown+spd,full.order.length); render(); if(shown>=full.order.length)clearInterval(timer); },45); }
+  document.getElementById('spd').addEventListener('input',e=>spd=+e.target.value);
+  document.getElementById('go1').onclick=play;
+  document.getElementById('rst1').onclick=()=>{ if(timer)clearInterval(timer); shown=0; render(); };
+  render();
+})();
+
+// ===== STEP 2: first touch = shortest, backtrack =====
+(function(){ const b=gridBoard(GC,GR,GCS); const g=wallGrid(GC,GR);
+  const full=bfsFull(g,ST); const goalD=full.dist.get(P.key(GO[0],GO[1]));
+  // 목표에 닿는 시점까지의 order 길이
+  let touchIdx=full.order.findIndex(o=>o[0]===GO[0]&&o[1]===GO[1]); if(touchIdx<0)touchIdx=full.order.length-1;
+  const path=backtrack(full.came,ST,GO); const maxD=goalD;
+  let shown=0,timer=null,done=false;
+  function render(){ let s='';
+    for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const w=g.walls.has(P.key(x,y));
+      s+=cellRect(b,x,y,w?'rgba(123,156,255,.16)':'rgba(123,156,255,.05)',w?'var(--q)':'var(--line)',w?1:.5); }
+    for(let i=0;i<shown;i++){ const [x,y,d]=full.order[i]; s+=cellRect(b,x,y,distColor(d,maxD),'rgba(0,0,0,.15)',.5); }
+    if(done){ let dpath=''; path.forEach((p,i)=>dpath+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' ');
+      s+=`<path d="${dpath}" fill="none" stroke="var(--good)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`; }
+    s+=`<circle cx="${b.cx(ST[0])}" cy="${b.cy(ST[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    s+=`<circle cx="${b.cx(GO[0])}" cy="${b.cy(GO[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s2').innerHTML=S.svg({W:b.W,H:b.H},s,'최단 경로');
+    document.getElementById('lab2').innerHTML= done?`목표에 닿음! 최단 경로 <b style="color:var(--good)">${goalD}걸음</b> · 그 전까지 ${touchIdx+1}칸을 적심.`: shown>0?`퍼지는 중… 적신 칸 ${shown}`:'"찾기"를 눌러 물결을 퍼뜨려요.'; }
+  function play(){ if(timer)clearInterval(timer); shown=0; done=false;
+    timer=setInterval(()=>{ shown=Math.min(shown+3,touchIdx+1); render(); if(shown>=touchIdx+1){ clearInterval(timer); done=true; render(); } },45); }
+  document.getElementById('go2').onclick=play;
+  document.getElementById('rst2').onclick=()=>{ if(timer)clearInterval(timer); shown=0; done=false; render(); };
+  render();
+})();
+
+// ===== STEP 3: explored vs path (static) =====
+(function(){ const b=gridBoard(GC,GR,GCS); const g=wallGrid(GC,GR);
+  const full=bfsFull(g,ST); const goalD=full.dist.get(P.key(GO[0],GO[1]));
+  let touchIdx=full.order.findIndex(o=>o[0]===GO[0]&&o[1]===GO[1]); if(touchIdx<0)touchIdx=full.order.length-1;
+  const explored=touchIdx+1; const path=backtrack(full.came,ST,GO);
+  let s='';
+  for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const w=g.walls.has(P.key(x,y));
+    s+=cellRect(b,x,y,w?'rgba(123,156,255,.16)':'rgba(123,156,255,.05)',w?'var(--q)':'var(--line)',w?1:.5); }
+  for(let i=0;i<=touchIdx;i++){ const [x,y]=full.order[i]; s+=cellRect(b,x,y,'rgba(167,139,250,.30)','rgba(167,139,250,.5)',.5); }
+  let dpath=''; path.forEach((p,i)=>dpath+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' ');
+  s+=`<path d="${dpath}" fill="none" stroke="var(--good)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  s+=`<circle cx="${b.cx(ST[0])}" cy="${b.cy(ST[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+  s+=`<circle cx="${b.cx(GO[0])}" cy="${b.cy(GO[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+  document.getElementById('s3').innerHTML=S.svg({W:b.W,H:b.H},s,'탐색 vs 경로');
+  document.getElementById('lab3').innerHTML=`탐색한 칸 <b style="color:var(--v)">${explored}</b> · 최종 경로 <b style="color:var(--good)">${path.length}</b>칸 → 경로의 약 <b>${(explored/path.length).toFixed(1)}배</b>를 들여다봤어요. (목표 방향을 모르니까요)`;
+})();
+</script>
+</body>
+</html>

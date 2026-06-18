@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 · A* — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:14px;} @media(max-width:680px){.two{grid-template-columns:1fr;}}
+  .two .cap{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-align:center; margin:0 0 4px;}
+  .leg{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0;}
+  .leg i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-1px; margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 2 · 격자 탐색 · CH 05</div>
+    <h1>A* — 목표 쪽으로 영리하게</h1>
+    <p class="intro">다익스트라는 목표가 어디 있는지 <b>모른 채</b> 사방으로 퍼져 헛수고가 많았어요. A*의 아이디어는 단순해요 — 각 칸에서 <b>"목표까지 대충 얼마나 남았나"를 어림짐작(휴리스틱)</b>해서, <b>이미 쓴 비용 + 남은 어림</b>이 가장 작은 칸부터 펼치는 거예요. "목표 냄새"를 따라가니 엉뚱한 방향을 훨씬 덜 보면서도, 어림이 <b>과장만 안 하면</b> 최단을 그대로 보장하죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 목표 냄새</button>
+    <button data-s="1">01 · 빔처럼 좁게</button>
+    <button data-s="2">02 · 탐욕의 함정</button>
+    <button data-s="3">03 · 빠름↔최적 조절</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — The Smell of the Goal</span>
+    <h2>각 칸에서 "목표까지 남은 거리"를 어림한다</h2>
+    <p class="lead">벽을 무시하고 <b>직선 거리</b>로만 "목표까지 얼마 남았나"를 칸마다 칠해봤어요 — <span style="color:var(--q)">목표에 가까울수록 진한 파랑</span>. 이게 <b>휴리스틱(어림짐작)</b>이에요. A*는 칸을 고를 때 <b>출발부터 쓴 비용(다익스트라가 보던 것)</b>에 이 <b>남은 어림</b>을 <b>더해서</b>, 합이 가장 작은 칸부터 열어요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0">f(칸) = <b style="color:var(--good)">g</b>(여기까지 실제 비용) + <b style="color:var(--q)">h</b>(목표까지 어림). 둘을 합쳐서 본다는 게 핵심.</p>
+    <p class="note" style="margin-top:6px">→ "냄새"만 따르면(=h만 보면) 빠르지만 속을 수 있고, 비용만 보면(=다익스트라) 느려요. A*는 <b>둘을 더해</b> 균형을 잡아요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — A Narrow Beam</span>
+    <h2>같은 최단, 훨씬 적게 들여다본다</h2>
+    <p class="lead">같은 미로에서 <b>다익스트라</b>(목표 모름)와 <b>A*</b>(목표 냄새 사용)가 <b>탐색한 칸</b>을 비교해요. 둘 다 <b>똑같은 최단 경로</b>를 찾지만, A*는 목표 쪽으로 <b>빔처럼 좁게</b> 퍼져 훨씬 적은 칸만 봐요. <b>퍼뜨리기</b>를 눌러보세요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go1">🔍 둘 다 퍼뜨리기</button> <button class="btn" id="rst1">↺ 리셋</button></div>
+    <div class="two">
+      <div><p class="cap">다익스트라 (목표 모름)</p><div class="scene" id="s1a"></div></div>
+      <div><p class="cap">A* (목표 냄새)</p><div class="scene" id="s1b"></div></div>
+    </div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 어림이 <b>실제보다 과장만 안 하면</b>(직선 거리는 항상 실제 이하) A*의 경로는 다익스트라와 똑같이 <b>최단</b>이에요. 이걸 "허용 가능한(admissible) 휴리스틱"이라 해요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — The Greedy Trap</span>
+    <h2>"냄새만" 따르면 — 빠르지만 속는다</h2>
+    <p class="lead">이번엔 함정이 있는 미로예요. <b>탐욕(greedy)</b>은 쓴 비용을 무시하고 <b>오직 목표 냄새(h)만</b> 따라가요. 그래서 아주 <b>빠르지만</b>, 막다른 쪽으로 끌려들어가 <b>훨씬 먼 길</b>로 돌기도 해요. <span style="color:var(--hot)">탐욕 경로(주황)</span>와 <span style="color:var(--good)">A* 경로(초록)</span>를 비교하세요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn" id="tog2">A* ↔ 탐욕</button></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 탐욕은 빠른 대신 <b>최적 보장이 없어요</b>. A*는 g를 함께 보기에 빠르면서도 최단을 지켜요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Tune Speed vs Optimality</span>
+    <h2>가중치 w로 빠름↔최적 사이를 조절</h2>
+    <p class="lead">어림 h에 <b>가중치 w</b>를 곱해보세요(같은 함정 미로). <b>w=1이면 보통 A*</b> — 가장 적게 보면서도 최단. w를 키울수록 <b>탐욕에 가까워져</b> 더 빨리(적게 탐색) 끝나지만 경로가 <b>길어질 위험</b>이 커져요. <b>w를 끝까지</b> 올리면 사실상 탐욕(앞 스텝)과 같아져요.</p>
+    <div class="ctl"><label style="font-size:13px;color:var(--muted);min-width:90px">가중치 w</label><input type="range" id="w3" min="1" max="8" step="0.5" value="1" style="flex:1"><span class="big" id="w3v" style="min-width:48px"></span></div>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ "최단을 포기하고 속도를 산다"는 선택지예요. 격자 탐색은 여기까지 — 다음 PART에선 격자의 한계와 <b>연속 공간</b>으로 넘어가요. 다음 → <a href="06-grid-limits.html" style="color:var(--q);font-weight:700">CH 06 · 격자의 한계</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 휴리스틱·탐색·경로 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '05 · A*');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+function gridBoard(cols,rows,cs){ const ox=12,oy=12; return {cols,rows,cs,ox,oy,W:ox*2+cols*cs,H:oy*2+rows*cs,
+  gx:x=>ox+x*cs, gy:y=>oy+y*cs, cx:x=>ox+(x+0.5)*cs, cy:y=>oy+(y+0.5)*cs}; }
+function cellRect(b,x,y,fill,stroke,sw){ return `<rect x="${b.gx(x)+0.5}" y="${b.gy(y)+0.5}" width="${b.cs-1}" height="${b.cs-1}" rx="2" fill="${fill}" stroke="${stroke||'var(--line)'}" stroke-width="${sw||.5}"/>`; }
+function wallsBase(b,g,GC,GR){ let s=''; for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const w=g.walls.has(P.key(x,y));
+  s+=cellRect(b,x,y,w?'rgba(123,156,255,.16)':'rgba(123,156,255,.04)',w?'var(--q)':'var(--line)',w?1:.5); } return s; }
+function marker(b,p,c){ return `<circle cx="${b.cx(p[0])}" cy="${b.cy(p[1])}" r="6" fill="${c}" stroke="#fff" stroke-width="1.5"/>`; }
+function drawPath(b,path,c,w,op){ let d=''; path.forEach((p,i)=>d+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" opacity="${op==null?1:op}" stroke-linejoin="round" stroke-linecap="round"/>`; }
+
+// ===== 맵 정의 =====
+// 깨끗한 맵 (Step0,1)
+const CC=18,CR=12,CST=[1,6],CGO=[16,6];
+function cleanGrid(){ const g=P.makeGrid(CC,CR,false); for(let y=0;y<8;y++)g.walls.add(P.key(9,y)); return g; }
+// 함정 맵 (Step2,3)
+const TC=16,TR=11,TST=[1,5],TGO=[14,5];
+const TWALLS=[[5,0],[9,0],[13,0],[14,0],[1,1],[4,1],[11,1],[1,2],[3,3],[5,3],[8,3],[14,3],[4,4],[6,4],[13,4],[7,5],[9,5],[13,5],[0,6],[8,6],[9,6],[11,6],[12,6],[14,6],[15,6],[3,7],[5,7],[8,7],[3,8],[5,8],[9,8],[12,8],[1,9],[2,9],[4,9],[5,9],[6,9],[8,9],[15,9],[1,10],[6,10]];
+function trapGrid(){ const g=P.makeGrid(TC,TR,false); TWALLS.forEach(([x,y])=>g.walls.add(P.key(x,y))); return g; }
+
+// ===== STEP 0: heuristic field =====
+(function(){ const b=gridBoard(CC,CR,18); const g=cleanGrid();
+  const maxH=Math.abs(CST[0]-CGO[0])+Math.abs(CST[1]-CGO[1])+4;
+  let s='';
+  for(let y=0;y<CR;y++)for(let x=0;x<CC;x++){ if(g.walls.has(P.key(x,y))){ s+=cellRect(b,x,y,'rgba(123,156,255,.18)','var(--q)',1); continue; }
+    const h=Math.abs(x-CGO[0])+Math.abs(y-CGO[1]); const t=1-Math.min(1,h/maxH); // 가까울수록 1
+    s+=cellRect(b,x,y,`rgba(55,120,246,${(0.06+0.5*t).toFixed(3)})`,'rgba(0,0,0,.1)',.5); }
+  s+=marker(b,CST,'var(--good)')+marker(b,CGO,'var(--hot)');
+  document.getElementById('s0').innerHTML=S.svg({W:b.W,H:b.H},s,'목표까지 어림(h)');
+})();
+
+// ===== STEP 1: Dijkstra vs A* explored =====
+(function(){ const ba=gridBoard(CC,CR,17), bb=gridBoard(CC,CR,17); const g=cleanGrid();
+  const dij=P.search(g,CST,CGO,{mode:'dijkstra'}); const ast=P.search(g,CST,CGO,{mode:'astar'});
+  let shownA=0,shownB=0,timer=null;
+  function panel(elid,b,res,shown){ let s=wallsBase(b,g,CC,CR);
+    for(let i=0;i<shown;i++){ const [x,y]=res.order[i]; s+=cellRect(b,x,y,'rgba(167,139,250,.30)','rgba(167,139,250,.4)',.5); }
+    if(shown>=res.order.length){ s+=drawPath(b,res.path,'var(--good)',4); }
+    s+=marker(b,CST,'var(--good)')+marker(b,CGO,'var(--hot)');
+    document.getElementById(elid).innerHTML=S.svg({W:b.W,H:b.H},s, shown>=res.order.length?('탐색 '+res.order.length):'…'); }
+  function render(){ panel('s1a',ba,dij,shownA); panel('s1b',bb,ast,shownB);
+    document.getElementById('lab1').innerHTML= (shownA>=dij.order.length&&shownB>=ast.order.length)
+      ? `다익스트라 <b style="color:var(--v)">${dij.explored}칸</b> 탐색 vs A* <b style="color:var(--v)">${ast.explored}칸</b> — 같은 최단(${dij.cost})인데 A*가 <b>${(dij.explored/ast.explored).toFixed(1)}배</b> 적게 봤어요.`
+      : `탐색 중… 다익 ${shownA} / A* ${shownB}`; }
+  function play(){ if(timer)clearInterval(timer); shownA=0; shownB=0;
+    timer=setInterval(()=>{ shownA=Math.min(shownA+3,dij.order.length); shownB=Math.min(shownB+3,ast.order.length); render();
+      if(shownA>=dij.order.length&&shownB>=ast.order.length)clearInterval(timer); },40); }
+  document.getElementById('go1').onclick=play;
+  document.getElementById('rst1').onclick=()=>{ if(timer)clearInterval(timer); shownA=0; shownB=0; render(); };
+  render();
+})();
+
+// ===== STEP 2: greedy trap =====
+(function(){ const b=gridBoard(TC,TR,20); const g=trapGrid();
+  const ast=P.search(g,TST,TGO,{mode:'astar'}); const grd=P.search(g,TST,TGO,{mode:'greedy'});
+  let showG=false;
+  function render(){ let s=wallsBase(b,g,TC,TR);
+    s+=drawPath(b,ast.path,'var(--good)', showG?2:4, showG?.4:1);
+    s+=drawPath(b,grd.path,'var(--hot)', showG?4:2, showG?1:.4);
+    s+=marker(b,TST,'var(--good)')+marker(b,TGO,'var(--hot)');
+    document.getElementById('s2').innerHTML=S.svg({W:b.W,H:b.H},s, showG?'탐욕':'A*');
+    document.getElementById('lab2').innerHTML= showG
+      ? `<b style="color:var(--hot)">탐욕</b>: 탐색 ${grd.explored}칸(빠름!)이지만 경로 비용 <b style="color:var(--hot)">${grd.cost}</b> — 함정에 끌려 멀리 돌았어요.`
+      : `<b style="color:var(--good)">A*</b>: 탐색 ${ast.explored}칸, 경로 비용 <b style="color:var(--good)">${ast.cost}</b> (최단). 탐욕은 같은 미로에서 ${grd.cost}까지 늘어나요.`; }
+  document.getElementById('tog2').onclick=()=>{showG=!showG; render();}; render();
+})();
+
+// ===== STEP 3: weighted A* slider =====
+(function(){ const b=gridBoard(TC,TR,20); const g=trapGrid(); let w=1;
+  const opt=P.search(g,TST,TGO,{mode:'astar'}).cost;
+  function render(){ document.getElementById('w3v').textContent='×'+fmt(w,1);
+    const r=P.search(g,TST,TGO,{mode:'astar',w});
+    let s=wallsBase(b,g,TC,TR);
+    for(let i=0;i<r.order.length;i++){ const [x,y]=r.order[i]; s+=cellRect(b,x,y,'rgba(167,139,250,.22)','rgba(167,139,250,.35)',.5); }
+    s+=drawPath(b,r.path, r.cost<=opt?'var(--good)':'var(--hot)',4);
+    s+=marker(b,TST,'var(--good)')+marker(b,TGO,'var(--hot)');
+    document.getElementById('s3').innerHTML=S.svg({W:b.W,H:b.H},s,'w='+fmt(w,1));
+    document.getElementById('lab3').innerHTML=`탐색 <b style="color:var(--v)">${r.explored}칸</b> · 경로 비용 <b style="color:${r.cost<=opt?'var(--good)':'var(--hot)'}">${r.cost}</b> ${w===1?'(w=1 → 보통 A*, 최단 보장)':r.cost<=opt?'(아직 최단 유지)':`(최단 ${opt}보다 길어짐 — 속도와 맞바꿨어요)`}`; }
+  document.getElementById('w3').addEventListener('input',e=>{w=+e.target.value; render();}); render();
+})();
+</script>
+</body>
+</html>

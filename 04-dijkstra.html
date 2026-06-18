@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 · 다익스트라 — 모션 플래닝, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .scene{cursor:default;}
+  .big{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink); margin:8px 2px 0;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .leg{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0;}
+  .leg i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-1px; margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag">PART 2 · 격자 탐색 · CH 04</div>
+    <h1>다익스트라 — 칸마다 비용이 다를 때</h1>
+    <p class="intro">BFS는 "한 걸음 = 한 칸"으로만 셌어요. 하지만 현실의 땅은 <b>다 똑같지 않죠</b> — 진흙은 느리고, 평지는 빠르고, 언덕은 힘들어요. 칸마다 <b>통과 비용</b>이 다르면, "칸 수가 적은 길"이 더는 "최선의 길"이 아니에요. 다익스트라는 <b>"지금까지 쌓인 비용이 가장 적은 칸부터"</b> 퍼뜨려요. BFS의 자연스러운 확장판이죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 땅이 다 다르다</button>
+    <button data-s="1">01 · 싼 칸부터 퍼진다</button>
+    <button data-s="2">02 · 진흙을 피해 돈다</button>
+    <button data-s="3">03 · BFS의 확장판</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — Not All Ground Is Equal</span>
+    <h2>진흙 1칸 = 평지 여러 칸</h2>
+    <p class="lead">땅에 색을 입혔어요. <span style="color:var(--q)">옅은 칸</span>은 평지(비용 1), <span style="color:var(--hot)">짙은 칸</span>은 진흙(비용 높음). 진흙을 가로지르면 칸 수는 적어도 <b>실제로 더 비싸요</b>. 슬라이더로 진흙 비용을 올리면, "칸 수"와 "실제 비용"이 점점 어긋나는 게 보여요.</p>
+    <div class="ctl"><label style="font-size:13px;color:var(--muted);min-width:90px">진흙 비용</label><input type="range" id="mc0" min="1" max="9" step="1" value="5" style="flex:1"><span class="big" id="mc0v" style="min-width:80px"></span></div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ "칸 수"가 아니라 "<b>쌓인 비용</b>"으로 따져야 진짜 최선의 길이 나와요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Cheapest First</span>
+    <h2>"쌓인 비용이 가장 적은 칸"부터 연다</h2>
+    <p class="lead">다익스트라는 매번 <b>지금까지 비용이 가장 적게 든 칸</b>을 골라 펼쳐요. 그래서 물결이 BFS처럼 동그랗지 않고 — <b>싼 땅(평지)으로는 빨리, 진흙으로는 천천히</b> 번져요. 색은 <b>출발에서 그 칸까지 쌓인 비용</b>이에요. <b>퍼뜨리기</b>를 눌러보세요.</p>
+    <div class="leg"><span><i style="background:rgb(40,90,230)"></i>싼 곳</span><span><i style="background:rgb(255,90,0)"></i>비쌈</span><span><i style="background:rgba(251,191,36,.5)"></i>진흙땅</span><span><i style="background:var(--good)"></i>출발</span></div>
+    <div class="row" style="margin:8px 0"><button class="btn play" id="go1">🌊 퍼뜨리기</button> <button class="btn" id="rst1">↺ 리셋</button></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Around the Mud</span>
+    <h2>칸 수가 늘어도 — 진흙을 피해 돈다</h2>
+    <p class="lead">두 경로를 비교해요. <span style="color:var(--muted)">BFS 경로(회색)</span>는 칸 수가 가장 적지만 진흙을 가로질러 <b>비싸요</b>. <span style="color:var(--good)">다익스트라 경로(초록)</span>는 칸 수가 더 많아도 진흙을 <b>피해 돌아</b> 실제 비용이 더 싸요. <b>전환</b>으로 번갈아 보세요.</p>
+    <div class="row" style="margin:8px 0"><button class="btn" id="tog2">BFS ↔ 다익스트라</button></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ "가장 짧은(칸)"과 "가장 싼(비용)"은 다를 수 있어요. 다익스트라는 <b>비용</b> 기준 최적을 보장해요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — A Generalization of BFS</span>
+    <h2>모든 칸 비용이 같으면 = BFS</h2>
+    <p class="lead">슬라이더로 진흙 비용을 <b>1까지</b> 내려보세요. 모든 칸이 비용 1이 되면 다익스트라의 물결은 다시 <b>BFS와 똑같은 동심원</b>이 돼요 — 다익스트라는 <b>BFS에 "비용"을 더한 일반화</b>거든요. 하지만 여전히 <b>목표 방향은 모른 채</b> 사방으로 퍼져, 엉뚱한 칸을 많이 봐요.</p>
+    <div class="ctl"><label style="font-size:13px;color:var(--muted);min-width:90px">진흙 비용</label><input type="range" id="mc3" min="1" max="9" step="1" value="5" style="flex:1"><span class="big" id="mc3v" style="min-width:80px"></span></div>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ "목표 쪽을 알면 덜 헤맬 텐데" — 비용에 <b>목표까지의 어림짐작</b>을 더하면? 다음 → <a href="05-astar.html" style="color:var(--q);font-weight:700">CH 05 · A*</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · 비용·탐색·경로 모두 브라우저에서 실시간 계산 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '04 · 다익스트라');
+VZ.setupStepper();
+const S=VZ.SIM, P=VZ.PLAN, fmt=VZ.fmt;
+function gridBoard(cols,rows,cs){ const ox=12,oy=12; return {cols,rows,cs,ox,oy,W:ox*2+cols*cs,H:oy*2+rows*cs,
+  gx:x=>ox+x*cs, gy:y=>oy+y*cs, cx:x=>ox+(x+0.5)*cs, cy:y=>oy+(y+0.5)*cs}; }
+function cellRect(b,x,y,fill,stroke,sw){ return `<rect x="${b.gx(x)+0.5}" y="${b.gy(y)+0.5}" width="${b.cs-1}" height="${b.cs-1}" rx="2" fill="${fill}" stroke="${stroke||'var(--line)'}" stroke-width="${sw||.5}"/>`; }
+const GC=15,GR=10,CS=20, ST=[1,5], GO=[13,5];
+// 진흙 띠(중앙 세로 밴드) — 가로지르면 비싸고, 위아래로 돌면 평지
+function isMud(x,y){ return x>=5&&x<=9 && y>=2 && y<=7; }
+function makeField(mudCost){ const g=P.makeGrid(GC,GR,false);
+  for(let y=0;y<GR;y++)for(let x=0;x<GC;x++) if(isMud(x,y)) g.cost.set(P.key(x,y),mudCost);
+  return g; }
+// 비용 기반 다익스트라: cost-to-come(gScore), came, order(확장 순서)
+function dijkstra(g,s){ const gS=new Map([[P.key(s[0],s[1]),0]]); const came=new Map(); const order=[]; const done=new Set();
+  const open=[[s[0],s[1]]];
+  while(open.length){ // 최소 gScore 칸 선택
+    let bi=0,bv=Infinity; for(let i=0;i<open.length;i++){ const v=gS.get(P.key(open[i][0],open[i][1])); if(v<bv){bv=v;bi=i;} }
+    const [x,y]=open.splice(bi,1)[0]; const k=P.key(x,y); if(done.has(k))continue; done.add(k); order.push([x,y,bv]);
+    for(const[dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx,ny=y+dy; if(P.blocked(g,nx,ny))continue; const nk=P.key(nx,ny); if(done.has(nk))continue;
+      const stepCost=P.cellCost(g,nx,ny); const ng=bv+stepCost; if(!gS.has(nk)||ng<gS.get(nk)){ gS.set(nk,ng); came.set(nk,k); open.push([nx,ny]); } } }
+  return {gS,came,order}; }
+function backtrack(came,s,t){ let c=P.key(t[0],t[1]),path=[]; if(!came.has(c)&&!(t[0]===s[0]&&t[1]===s[1]))return []; while(c){ const [x,y]=c.split(',').map(Number); path.unshift([x,y]); if(x===s[0]&&y===s[1])break; c=came.get(c); } return path; }
+// BFS(칸 수 최소) 경로
+function bfsPath(g,s,t){ const r=P.search(g,s,t,{mode:'bfs'}); return r.found?r.path:[]; }
+function pathCost(g,path){ let c=0; for(let i=1;i<path.length;i++) c+=P.cellCost(g,path[i][0],path[i][1]); return c; }
+function mudSVG(b){ let s=''; for(let y=0;y<GR;y++)for(let x=0;x<GC;x++) if(isMud(x,y)) s+=cellRect(b,x,y,'rgba(251,191,36,.16)','rgba(251,191,36,.3)',.5); return s; }
+
+// ===== STEP 0: terrain & cost mismatch =====
+(function(){ const b=gridBoard(GC,GR,CS); let mc=5;
+  function render(){ document.getElementById('mc0v').textContent='×'+mc;
+    const g=makeField(mc);
+    let s=''; for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ const m=isMud(x,y);
+      s+=cellRect(b,x,y, m?`rgba(251,191,36,${0.08+0.05*mc})`:'rgba(123,156,255,.05)', m?'rgba(251,191,36,.4)':'var(--line)',.5); }
+    s+=`<circle cx="${b.cx(ST[0])}" cy="${b.cy(ST[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    s+=`<circle cx="${b.cx(GO[0])}" cy="${b.cy(GO[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s0').innerHTML=S.svg({W:b.W,H:b.H},s,'땅 비용');
+    // 직선(가로지르기) 비용 vs 칸 수
+    const straight=[]; for(let x=ST[0];x<=GO[0];x++) straight.push([x,5]);
+    document.getElementById('lab0').innerHTML=`출발→목표 직진은 ${straight.length}칸 · 하지만 진흙(×${mc})을 가로질러 실제 비용 <b style="color:var(--hot)">${pathCost(g,straight)}</b>. 칸 수↔비용이 ${mc>1?'<b>어긋나요</b>':'<b>같아요</b>'}.`; }
+  document.getElementById('mc0').addEventListener('input',e=>{mc=+e.target.value; render();}); render();
+})();
+
+// ===== STEP 1: cheapest-first wave =====
+(function(){ const b=gridBoard(GC,GR,CS); const g=makeField(5); const full=dijkstra(g,ST);
+  const maxC=Math.max(...full.order.map(o=>o[2]));
+  let shown=0,timer=null;
+  function render(){ let s=mudSVG(b);
+    for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ if(!full.order.find(o=>o[0]===x&&o[1]===y)) s+=cellRect(b,x,y,'rgba(123,156,255,.04)'); }
+    for(let i=0;i<shown;i++){ const [x,y,c]=full.order[i]; s+=cellRect(b,x,y,P.heatColor(maxC>0?c/maxC:0),'rgba(0,0,0,.15)',.5); }
+    s+=`<circle cx="${b.cx(ST[0])}" cy="${b.cy(ST[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s1').innerHTML=S.svg({W:b.W,H:b.H},s,'비용 물결');
+    const cur=shown>0?full.order[shown-1][2]:0;
+    document.getElementById('lab1').innerHTML= shown>=full.order.length?`전부 펼침 — 평지(파랑)는 빨리, 진흙은 비용이 커서(주황) 천천히 번졌어요.`:`펼친 칸 ${shown} · 현재 쌓인 비용 <b>${fmt(cur,0)}</b>`; }
+  function play(){ if(timer)clearInterval(timer); shown=0; timer=setInterval(()=>{ shown=Math.min(shown+2,full.order.length); render(); if(shown>=full.order.length)clearInterval(timer); },45); }
+  document.getElementById('go1').onclick=play;
+  document.getElementById('rst1').onclick=()=>{ if(timer)clearInterval(timer); shown=0; render(); };
+  render();
+})();
+
+// ===== STEP 2: BFS vs Dijkstra path =====
+(function(){ const b=gridBoard(GC,GR,CS); const g=makeField(5);
+  const dij=dijkstra(g,ST); const dPath=backtrack(dij.came,ST,GO); const bPath=bfsPath(g,ST,GO);
+  let showD=true;
+  function render(){ let s=mudSVG(b);
+    for(let y=0;y<GR;y++)for(let x=0;x<GC;x++){ if(!isMud(x,y)) s+=cellRect(b,x,y,'rgba(123,156,255,.04)'); }
+    // 항상 둘 다 옅게 + 선택된 것 강조
+    const draw=(path,c,w,op)=>{ let d=''; path.forEach((p,i)=>d+=(i?'L':'M')+b.cx(p[0])+' '+b.cy(p[1])+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" opacity="${op}" stroke-linejoin="round" stroke-linecap="round"/>`; };
+    s+=draw(bPath,'var(--muted)', showD?2:4, showD?.4:1);
+    s+=draw(dPath,'var(--good)', showD?4:2, showD?1:.4);
+    s+=`<circle cx="${b.cx(ST[0])}" cy="${b.cy(ST[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    s+=`<circle cx="${b.cx(GO[0])}" cy="${b.cy(GO[1])}" r="6" fill="var(--hot)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s2').innerHTML=S.svg({W:b.W,H:b.H},s,'BFS vs 다익스트라');
+    const bc=pathCost(g,bPath), dc=pathCost(g,dPath);
+    document.getElementById('lab2').innerHTML= showD
+      ? `<b style="color:var(--good)">다익스트라</b>: ${dPath.length}칸, 비용 <b>${dc}</b> (진흙 피해 돎 — 더 싸다)`
+      : `<b style="color:var(--muted)">BFS</b>: ${bPath.length}칸 (칸 수 최소), 비용 <b style="color:var(--hot)">${bc}</b> (진흙 가로질러 비쌈)`; }
+  document.getElementById('tog2').onclick=()=>{showD=!showD; render();}; render();
+})();
+
+// ===== STEP 3: reduce to BFS =====
+(function(){ const b=gridBoard(GC,GR,CS); let mc=5;
+  function render(){ document.getElementById('mc3v').textContent='×'+mc;
+    const g=makeField(mc); const full=dijkstra(g,ST); const maxC=Math.max(...full.order.map(o=>o[2]));
+    let s=mudSVG(b);
+    for(let i=0;i<full.order.length;i++){ const [x,y,c]=full.order[i]; s+=cellRect(b,x,y,P.heatColor(maxC>0?c/maxC:0),'rgba(0,0,0,.12)',.5); }
+    s+=`<circle cx="${b.cx(ST[0])}" cy="${b.cy(ST[1])}" r="6" fill="var(--good)" stroke="#fff" stroke-width="1.5"/>`;
+    document.getElementById('s3').innerHTML=S.svg({W:b.W,H:b.H},s,'진흙 ×'+mc);
+    document.getElementById('lab3').innerHTML= mc===1
+      ? `모든 칸 비용 1 → 물결이 <b style="color:var(--good)">완벽한 동심원</b>. 이게 바로 BFS! 다익스트라 = BFS + 비용.`
+      : `진흙 ×${mc} → 평지로 비용 물결이 <b>먼저</b> 흘러요. 비용을 1로 내리면 BFS가 돼요.`; }
+  document.getElementById('mc3').addEventListener('input',e=>{mc=+e.target.value; render();}); render();
+})();
+</script>
+</body>
+</html>
