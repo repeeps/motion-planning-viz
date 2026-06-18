@@ -37,7 +37,7 @@
   <section class="panel show" data-panel="0">
     <span class="kicker" style="color:var(--hot)">Step 00 — The Smell of the Goal</span>
     <h2>각 칸에서 "목표까지 남은 거리"를 어림한다</h2>
-    <p class="lead">벽을 무시하고 <b>직선 거리</b>로만 "목표까지 얼마 남았나"를 칸마다 칠해봤어요 — <span style="color:var(--q)">목표에 가까울수록 진한 파랑</span>. 이게 <b>휴리스틱(어림짐작)</b>이에요. A*는 칸을 고를 때 <b>출발부터 쓴 비용(다익스트라가 보던 것)</b>에 이 <b>남은 어림</b>을 <b>더해서</b>, 합이 가장 작은 칸부터 열어요.</p>
+    <p class="lead">벽을 무시하고 <b>가로·세로로 줄여야 할 칸 수</b>로만 "목표까지 얼마 남았나"를 칸마다 칠해봤어요 — <span style="color:var(--q)">목표에 가까울수록 진한 파랑</span>(이 격자 거리를 "맨해튼 거리"라 불러요). 이게 <b>휴리스틱(어림짐작)</b>이에요. A*는 칸을 고를 때 <b>출발부터 쓴 비용(다익스트라가 보던 것)</b>에 이 <b>남은 어림</b>을 <b>더해서</b>, 합이 가장 작은 칸부터 열어요.</p>
     <div class="scene" id="s0"></div>
     <p class="big" id="lab0">f(칸) = <b style="color:var(--good)">g</b>(여기까지 실제 비용) + <b style="color:var(--q)">h</b>(목표까지 어림). 둘을 합쳐서 본다는 게 핵심.</p>
     <p class="note" style="margin-top:6px">→ "냄새"만 따르면(=h만 보면) 빠르지만 속을 수 있고, 비용만 보면(=다익스트라) 느려요. A*는 <b>둘을 더해</b> 균형을 잡아요.</p>
@@ -54,7 +54,7 @@
       <div><p class="cap">A* (목표 냄새)</p><div class="scene" id="s1b"></div></div>
     </div>
     <p class="big" id="lab1"></p>
-    <p class="note" style="margin-top:6px">→ 어림이 <b>실제보다 과장만 안 하면</b>(직선 거리는 항상 실제 이하) A*의 경로는 다익스트라와 똑같이 <b>최단</b>이에요. 이걸 "허용 가능한(admissible) 휴리스틱"이라 해요.</p>
+    <p class="note" style="margin-top:6px">→ 어림이 <b>실제보다 과장만 안 하면</b>(가로+세로 칸 수는 우회 때문에 항상 실제 비용 이하) A*의 경로는 다익스트라와 똑같이 <b>최단</b>이에요. 이걸 "허용 가능한(admissible) 휴리스틱"이라 해요.</p>
   </section>
 
   <!-- STEP 2 -->
@@ -72,7 +72,7 @@
   <section class="panel" data-panel="3">
     <span class="kicker" style="color:var(--good)">Step 03 — Tune Speed vs Optimality</span>
     <h2>가중치 w로 빠름↔최적 사이를 조절</h2>
-    <p class="lead">어림 h에 <b>가중치 w</b>를 곱해보세요(같은 함정 미로). <b>w=1이면 보통 A*</b> — 가장 적게 보면서도 최단. w를 키울수록 <b>탐욕에 가까워져</b> 더 빨리(적게 탐색) 끝나지만 경로가 <b>길어질 위험</b>이 커져요. <b>w를 끝까지</b> 올리면 사실상 탐욕(앞 스텝)과 같아져요.</p>
+    <p class="lead">어림 h에 <b>가중치 w</b>를 곱해보세요(같은 함정 미로). <b>w=1이면 보통 A*</b> — 가장 적게 보면서도 최단. w를 키울수록 <b>탐욕에 가까워져</b> 대체로 더 빨리(적게 탐색) 끝나지만 경로가 <b>길어질 위험</b>이 커져요. <b>w를 끝까지</b> 올리면 사실상 탐욕(앞 스텝)과 같아져요.</p>
     <div class="ctl"><label style="font-size:13px;color:var(--muted);min-width:90px">가중치 w</label><input type="range" id="w3" min="1" max="8" step="0.5" value="1" style="flex:1"><span class="big" id="w3v" style="min-width:48px"></span></div>
     <div class="scene" id="s3"></div>
     <p class="big" id="lab3"></p>
