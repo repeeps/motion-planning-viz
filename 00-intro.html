@@ -97,7 +97,7 @@ const START=[1,3];
   function render(){ const hit=P.segHit(START,goal,OBS);
     let s=obsSVG(b)+pathSVG(b,[START,goal],hit?'var(--k)':'var(--good)',3,'6 5')+dot(b,START,'var(--good)',7,'출발')+dot(b,goal,'var(--hot)',7,'목표');
     document.getElementById('s0').innerHTML=S.svg(b,s,'직진');
-    document.getElementById('lab0').innerHTML= hit?`직선 경로가 장애물을 <b style="color:var(--k)">통과 — 충돌!</b> 직진 불가.`:`직선이 장애물을 비껴갔어요. (목표를 장애물 뒤로 끌어보세요)`; }
+    document.getElementById('lab0').innerHTML= hit?`직선 경로가 장애물을 <b style="color:var(--k)">통과 — 충돌!</b> 직진 불가. <span style="color:var(--faint)">(목표를 끌어 옮겨보세요)</span>`:`직선이 장애물을 비껴갔어요. (목표를 장애물 뒤로 끌어보세요)`; }
   function px(e){ const sv=document.querySelector('#s0 svg'); if(!sv)return null; const r=sv.getBoundingClientRect(); return [ (e.clientX-r.left)/r.width*b.W/b.s - b.ox/b.s, -((e.clientY-r.top)/r.height*b.H - b.oy)/b.s ]; }
   let drag=false; const el=document.getElementById('s0');
   el.addEventListener('pointerdown',e=>{drag=true;const p=px(e);if(p){goal=[VZ.clamp(p[0],0.5,9.7),VZ.clamp(p[1],0.3,5.7)];render();}});
