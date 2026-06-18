@@ -91,12 +91,7 @@ function arrow(b,p,th,c,len){ len=len||0.9; const e=[p[0]+Math.cos(th)*len,p[1]+
   return `<line x1="${b.X(p[0])}" y1="${b.Y(p[1])}" x2="${b.X(e[0])}" y2="${b.Y(e[1])}" stroke="${c}" stroke-width="2" marker-end=""/><circle cx="${b.X(e[0])}" cy="${b.Y(e[1])}" r="2.5" fill="${c}"/>`; }
 function pathSVG(b,pts,c,w,dash){ let d=''; pts.forEach((p,i)=>d+=(i?'L':'M')+b.X(p[0]).toFixed(1)+' '+b.Y(p[1]).toFixed(1)+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w||3}" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round" stroke-linecap="round"/>`; }
 
-// ===== STEP 0: holonomic vs car =====
-(function(){ const b=board(); let goal=[6.5,1.8]; const ROB=[2.0,0], CAR=[2.0,0]; // 같은 y기준, 좌우 두 패널은 한 보드에 나눠 그림
-  // 단일 보드, 왼쪽=점로봇 영역(x<5) 오른쪽=차(x>5)는 과하니 — 대신 한 장면에 둘 비교는 복잡. 두 보드로.
-  document.getElementById('s0').innerHTML='';
-})();
-// Step0를 두 개의 작은 보드로 구성
+// ===== STEP 0: holonomic vs car (두 개의 작은 보드) =====
 (function(){ const host=document.getElementById('s0'); host.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div style="font:11px monospace;color:var(--muted);text-align:center;margin-bottom:3px">점 로봇 (어디든 직진)</div><div id="s0a"></div></div><div><div style="font:11px monospace;color:var(--muted);text-align:center;margin-bottom:3px">자동차 (앞으로만)</div><div id="s0b"></div></div></div>';
   const bb=S.board({W:210,H:200,s:26,ox:10,oy:100}); // y중앙
   let goal=[5.5,1.6]; const POS=[1.0,0], TH=0; // 차는 +x 방향

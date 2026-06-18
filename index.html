@@ -87,9 +87,8 @@
 
 <script>
 (function(){
-  const READY = new Set(['00-intro.html']);
   const PAL=['var(--hot)','var(--q)','var(--v)','var(--good)','var(--pink)','var(--blue)'];
-  document.querySelectorAll('a.ccard').forEach((a,i)=>{ a.style.setProperty('--accent', PAL[i%PAL.length]); if(READY.has(a.getAttribute('href'))) return; a.classList.add('soon'); a.addEventListener('click', e=>e.preventDefault()); });
+  document.querySelectorAll('a.ccard').forEach((a,i)=>{ a.style.setProperty('--accent', PAL[i%PAL.length]); });
 })();
 </script>
 </body>
