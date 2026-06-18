@@ -56,7 +56,7 @@
   <section class="panel" data-panel="2">
     <span class="kicker" style="color:var(--v)">Step 02 — Trapped in a Local Minimum</span>
     <h2>오목한 곳에 갇히면 — 못 나온다</h2>
-    <p class="lead">장애물이 <b>오목하게(ㄷ자)</b> 놓이면 함정이 생겨요. 공이 안으로 굴러 들어가면, 한가운데에서 <b>당기는 힘(목표)과 밀어내는 힘(장애물)이 정확히 상쇄</b>돼 힘이 0이 돼요 — <b>웅덩이의 바닥</b>이죠. 목표가 코앞에 보여도 <b>꼼짝 못 해요</b>. <b>굴리기</b>로 직접 갇혀보세요.</p>
+    <p class="lead">장애물이 <b>오목하게(ㄷ자)</b> 놓이면 함정이 생겨요. 공이 안으로 굴러 들어가면, 한가운데에서 <b>당기는 힘(목표)과 밀어내는 힘(장애물)이 거의 상쇄</b>돼 더 나아갈 힘이 없어져요 — <b>웅덩이의 바닥</b>이죠. 목표가 코앞에 보여도 <b>꼼짝 못 해요</b>. <b>굴리기</b>로 직접 갇혀보세요.</p>
     <div class="row" style="margin:8px 0"><button class="btn play" id="go2">⚽ 굴리기</button> <button class="btn" id="rst2">↺ 리셋</button></div>
     <div class="scene" id="s2"></div>
     <p class="big" id="lab2"></p>
@@ -99,12 +99,15 @@ function fieldSVG(b,obs,gx0,gx1,gy0,gy1,gap){ let s=''; for(let x=gx0;x<=gx1;x+=
     s+=`<line x1="${b.X(x)}" y1="${b.Y(y)}" x2="${b.X(x2)}" y2="${b.Y(y2)}" stroke="var(--q)" stroke-width="1.3" opacity=".65"/>`;
     s+=`<circle cx="${b.X(x2)}" cy="${b.Y(y2)}" r="1.6" fill="var(--q)"/>`; } return s; }
 // 경사하강
-function descend(start,obs,onStep,onDone){ let p=[...start]; let i=0; const path=[[...p]];
+function descend(start,obs,onStep,onDone){ let p=[...start]; let i=0; const path=[[...p]]; const WIN=24;
   const timer=setInterval(()=>{ const f=P.potential(p,GOAL,obs,OPT); const m=Math.hypot(f[0],f[1]);
     const dgoal=Math.hypot(GOAL[0]-p[0],GOAL[1]-p[1]);
     if(dgoal<0.35){ clearInterval(timer); onDone(true,path,p); return; }
-    if(m<0.05||i>500){ clearInterval(timer); onDone(false,path,p); return; }
-    p=[p[0]+f[0]/m*0.08, p[1]+f[1]/m*0.08]; path.push([...p]); i++; onStep(path,p); },24);
+    p=[p[0]+f[0]/m*0.08, p[1]+f[1]/m*0.08]; path.push([...p]); i++;
+    // 최근 WIN스텝 동안 '실질 전진'이 거의 없으면(제자리 진동/정체) = 지역최소
+    if(i>WIN){ const old=path[path.length-1-WIN]; if(Math.hypot(p[0]-old[0],p[1]-old[1])<0.12){ clearInterval(timer); onDone(false,path,p); return; } }
+    if(i>600){ clearInterval(timer); onDone(false,path,p); return; }
+    onStep(path,p); },24);
   return timer; }
 function pathSVG(b,path,c){ let d=''; path.forEach((q,i)=>d+=(i?'L':'M')+b.X(q[0]).toFixed(1)+' '+b.Y(q[1]).toFixed(1)+' '); return `<path d="${d}" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>`; }
 
@@ -141,7 +144,7 @@ const CUP=[{x:5.4,y:4,r:0.6},{x:5.0,y:3.0,r:0.6},{x:5.0,y:5.0,r:0.6},{x:4.5,y:2.
     if(result===false&&stuck) s+=`<text x="${b.X(stuck[0])}" y="${b.Y(stuck[1])-13}" fill="var(--hot)" font-size="12" text-anchor="middle" font-family="monospace">갇힘!</text>`;
     document.getElementById('s2').innerHTML=S.svg(b,s,'지역 최소');
     document.getElementById('lab2').innerHTML= result==null?(path?'구르는 중…':'"굴리기"를 눌러보세요. 목표가 ㄷ자 뒤에 있어요.')
-      : result?'어라, 빠져나갔네요 — 다시 굴려보세요(보통은 갇혀요).':`<b style="color:var(--hot)">갇혔어요!</b> 목표(x=9)가 코앞인데 힘이 0인 웅덩이에서 못 나와요. 하지만 위/아래로 <b>돌아가는 길은 분명히 있죠</b>.`; }
+      : result?'목표에 닿았어요 — 출발 위치를 바꾸면 갇히기도 해요.':`<b style="color:var(--hot)">갇혔어요!</b> 목표(x=9)가 코앞인데, 당기는 힘과 밀어내는 힘이 거의 상쇄돼 <b>더 나아가지 못하는 웅덩이 바닥</b>에 멈췄어요. 하지만 위/아래로 <b>돌아가는 길은 분명히 있죠</b>.`; }
   function play(){ if(timer)clearInterval(timer); result=null; stuck=null; path=[[...start]];
     timer=descend(start,CUP,(pp)=>{path=pp;render();},(ok,pp,p)=>{path=pp;result=ok;stuck=p;render();}); render(); }
   document.getElementById('go2').onclick=play;
